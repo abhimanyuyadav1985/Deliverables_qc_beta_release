@@ -1,226 +1,315 @@
-import pickle
-import os
-import time
-import shutil
-import datetime
+import sqlite3
 import sys
+import logging
+import time
+import os
+import pickle
 
-register_name = 'task_register'
-taks_log_name = 'task_log'
-task_lock_name = 'task_lock'
-status_update_lock_name = 'status_update_lock'
+class Task_execution_service(object):
+    """
+    Task execution service running on the DUG tape server
 
-# now entry in register structure = [ command, drive, log_path ]
-#this will be used later by the other daemons
+    """
 
-def task_execution():
-    file_handler = open(os.path.join(os.getcwd(),register_name),'rb')
-    task_register = pickle.load(file_handler)
-    file_handler.close()
-    if len(task_register) == 0:
-        print "Task register empty.."
-    else:
-        for a_entry in task_register:
-                print "Now executing : " + a_entry[0]
-                cmd = a_entry[0]
-                add_to_task_log(a_entry)
-                if a_entry[1] == 'segy_qc':
-                    create_segy_qc_lock()
-                os.system(cmd)
-        print "Clearing Register .."
-        task_register = []
-        os.remove(os.path.join(os.getcwd(), register_name))
-        file_handler = open(os.path.join(os.getcwd(), register_name), 'wb')
-        pickle.dump(task_register, file_handler)
-        file_handler.close()
-        print "Done .. "
-        print "No unexecuted commands in register.."
+    def __init__(self, log_path, database_path):
+        
+        self.setup_logging(log_path)
+        self.database_connection = False
+        self.create_database_connection(database_path)
 
 
-def create_segy_qc_lock():
-    file_handler = open(os.path.join(os.getcwd(),'segy_qc_lock'),'wb')
-    file_handler.write("")
-    file_handler.close()
-    print "SEGY QC lock created"
+    def setup_logging(self,log_path):
+        """
+        logging function for the task execution service
+        :param log_path: log file used by the loggin service
+        :return: None
 
-def add_to_task_log(a_entry):
-    # 1st check if the task log exists
-    if os.path.exists(os.path.join(os.getcwd(),taks_log_name)):
-        print "Found task log .. "
-    else:
-        print "Creating a blank task log ..",
-        blank_log = []
-        file_handler = open(os.path.join(os.getcwd(),taks_log_name),'wb')
-        pickle.dump(blank_log,file_handler)
-        file_handler.close()
-        print "Done .. "
-    if os.path.exists(os.path.join(os.getcwd(),status_update_lock_name)):
-        time.sleep(10)
-        add_to_task_log(a_entry)
-    else:
-        pass
-    manipulate_task_log_lock('create')
-    file_handler = open(os.path.join(os.getcwd(), taks_log_name), 'rb')
-    task_log_list = pickle.load(file_handler)
-    file_handler.close()
-    a_entry.append('new')
-    task_log_list.append(a_entry)
-    os.remove(os.path.join(os.getcwd(),taks_log_name))
-    file_handler = open(os.path.join(os.getcwd(), taks_log_name), 'wb')
-    pickle.dump(task_log_list,file_handler)
-    file_handler.close()
-    manipulate_task_log_lock('remove')
-    print "Added to task log : " + a_entry[0]
+        """
+        self.logging = logging
+        self.logging.basicConfig(level=logging.DEBUG,
+                                 format='%(asctime)s %(levelname)-8s %(message)s',
+                                 datefmt='%a, %d %b %Y %H:%M:%S',
+                                 filename=log_path,
+                                 file_mode = 'w')
+        self.logging.info('Logging services setup done ....')
 
 
-def manipulate_task_log_lock(action):
-    if action == 'create':
-        print "Locking the task log for reading .. ",
-        file_handler = open(os.path.join(os.getcwd(),task_lock_name),'wb')
-        file_handler.write("")
-        file_handler.close()
-        print "Done .. "
-    else:
-        print "Removing the task log ..",
-        os.remove(os.path.join(os.getcwd(),task_lock_name))
-        print "Done .. "
-
-
-def check_task_register():
-    if os.path.exists(os.path.join(os.getcwd(),register_name)):
-        print "Found task register"
-    else:
-        sys.exit()
-
-
-def move_segy_qc_to_segy_qc_buffer():
-    src_path = os.path.join(os.getcwd(), 'buffer', register_name)
-    dst_path = os.path.join(os.getcwd(), 'buffer', 'register_temp')
-    shutil.copy(src_path,dst_path)
-    file_handler = open(dst_path,'rb')
-    new_cmd = pickle.load(file_handler)
-    file_handler.close()
-    # Now remove the temp path
-    os.remove(dst_path)
-    # creare a new SEGY QC buffer if missing
-    file_handler = open(os.path.join(os.getcwd(),'buffer','segy_qc_buffer'),'rb')
-    current_segy_qc = pickle.load(file_handler)
-    file_handler.close()
-    for a_cmd in new_cmd:
-        if a_cmd[1] == 'segy_qc':
-            print "Added to SEGY QC buffer: " +  a_cmd[0]
-            current_segy_qc.append(a_cmd)
-    os.remove(os.path.join(os.getcwd(),'buffer','segy_qc_buffer'))
-    file_handler = open(os.path.join(os.getcwd(), 'buffer', 'segy_qc_buffer'), 'wb')
-    pickle.dump(current_segy_qc,file_handler)
-    file_handler.close()
-
-def remove_segy_qc_from_buffer_task_register():
-    src_path = os.path.join(os.getcwd(), 'buffer', register_name)
-    file_handler = open(src_path, 'rb')
-    buffer_task_list = pickle.load(file_handler)
-    file_handler.close()
-    for a_task in buffer_task_list:
-        if a_task[1] =='segy_qc':
-            print "Reomved from buffer task list: " + a_task[0]
-            buffer_task_list.remove(a_task)
-    os.remove(src_path)
-    file_handler = open(src_path,'wb')
-    pickle.dump(buffer_task_list,file_handler)
-    file_handler.close()
-
-
-def append_segy_qc_task_to_buffer_register():
-    segy_qc_buffer_path = os.path.join(os.getcwd(), 'buffer', 'segy_qc_buffer')
-    task_register_path = os.path.join(os.getcwd(),'buffer',register_name)
-    file_handler = open(segy_qc_buffer_path,'rb')
-    segy_qc_buffer_list = pickle.load(file_handler)
-    file_handler.close()
-    # first check if segy qc lock is present or not
-    segy_qc_lock_path = os.path.join(os.getcwd(),'segy_qc_lock')
-    if os.path.exists(segy_qc_lock_path):
-        print "A SEGY QC job is already running .. omitting new job addition.."
-    else:
-        if len(segy_qc_buffer_list) != 0:
-            cmd_to_add = segy_qc_buffer_list[0]
-            segy_qc_buffer_list.remove(cmd_to_add)
-            check_and_create_buffer_task_register()
-            file_handler = open(task_register_path,'rb')
-            print "Adding to task buffer : " + cmd_to_add[0]
-            buffer_task_log = pickle.load(file_handler)
-            file_handler.close()
-            buffer_task_log.append(cmd_to_add)
-            os.remove(task_register_path)
-            file_handler = open(task_register_path,'wb')
-            pickle.dump(buffer_task_log,file_handler)
-            file_handler.close()
-            print "Moved from SEGY QC buffer : " + cmd_to_add[0]
-            os.remove(segy_qc_buffer_path)
-            file_handler = open(segy_qc_buffer_path,'wb')
-            pickle.dump(segy_qc_buffer_list,file_handler)
-            file_handler.close()
+    
+    def create_database_connection(self,database_path):
+        """
+        create the database connection to the specified SQLite database file
+        :param database_path: path to the project SQLlite data
+        :return: change the parameter self.database connection to true when connected to the database
+        """
+        if os.path.exists(database_path):
+            self.logging.info('Found file now connecting to database: ' + database_path)
+            try:
+                self.conn = sqlite3.connect(database_path, isolation_level = None)
+                self.cursor = self.conn.cursor()
+                self.logging.info("Done.. ")
+                self.database_connection = True
+            except Exception as e:
+                self.logging.error('Unable to connect to database')
+                self.logging.error(e)
         else:
-            print "No new SEGY QC task to move to buffer_task_registe"
+            self.logging.error("Unable to locate database file")
+            
 
-def check_and_create_buffer_task_register():
-    if os.path.exists(os.path.join(os.getcwd(), 'buffer', register_name)):
-        pass
-    else:
-        file_handler = open(os.path.join(os.getcwd(), 'buffer', register_name),'wb')
-        empty_list = []
-        pickle.dump(empty_list,file_handler)
-        file_handler.close()
+    def add_new_commands_to_database(self):
+        """
+        Check the fole ../from_app
 
-
-def task_execution_lock(status):
-    lock_path = os.path.join(os.getcwd(),'buffer','task_daemon_lock')
-    if status == 'create':
-        print "Creating Task execution deamon lock on buffer .."
-        file_handler = open(lock_path,'wb')
-        file_handler.write("")
-        file_handler.close()
-    elif status == 'remove':
-        print "Task execution daemon lock on buffer removed .. "
-        os.remove(lock_path)
-
-def check_and_create_segy_buffer():
-    if os.path.exists(os.path.join(os.getcwd(),'buffer','segy_qc_buffer')):
-        pass
-    else:
-        print "SEGY QC buffer missing creating new .."
-        file_handler = open(os.path.join(os.getcwd(), 'buffer', 'segy_qc_buffer'), 'wb')
-        empty_list = []
-        pickle.dump(empty_list,file_handler)
-        file_handler.close()
-
-def main():
-    while True:
-        print str(datetime.datetime.now())
-        check_and_create_segy_buffer()
-        if os.path.exists(os.path.join(os.getcwd(), 'buffer', 'buffer_lock')):
-            print "Buffer lock enabled omitting buffer transfer"
-        else:
-            if os.path.exists(os.path.join(os.getcwd(), 'buffer', register_name)):
-                task_execution_lock('create')
-                move_segy_qc_to_segy_qc_buffer()
-                remove_segy_qc_from_buffer_task_register()
-                append_segy_qc_task_to_buffer_register()
-                print "Removing the old register ..",
-                os.remove(os.path.join(os.getcwd(), register_name))
-                print "Done .."
-                print "Now creating new register from buffer ..",
-                src_path = os.path.join(os.getcwd(), 'buffer', register_name)
-                dst_path = os.getcwd()
-                shutil.move(src=src_path, dst=dst_path)
-                task_execution_lock('remove')
-                print "Done .. "
+        This is the folder when the pickle files for the commands from the deliverables qc application are sent
+        :return: none
+        """
+        try:
+            self.logging.info('Now looking for commands to add to database')
+            app_command_dir = os.path.join(os.getcwd(),'from_app')
+            cmds_to_add = os.listdir(app_command_dir)
+            if len(cmds_to_add) ==0:
+                self.logging.info("No new commands to add to the database")
             else:
-                append_segy_qc_task_to_buffer_register()
-                print "Buffer empty.."
-        check_task_register()
-        task_execution()
-        time.sleep(30)
+                for a_cmd in cmds_to_add:
+                    self.logging.info('Found: ' + a_cmd)
+                    cmd_path = os.path.join(app_command_dir, a_cmd)
+                    self.add_single_cmd(cmd_path)
+                self.logging.info("Addition of new commands to the database complete") 
+        except Exception as e:
+            self.logging.error(e)
+            
+    def add_single_cmd(self, cmd_path):
+        """
+        Add a single command from the pickle file to the database and add to logfile
+        :param cmd_path: path to the pickle file to be added to the database as a command
+        :return:
+        """
+        try:
+            file_handler = open(cmd_path, 'rb')
+            cmd_tuple_to_use = pickle.load(file_handler)
+            file_handler.close()
+            self.cursor.execute('INSERT INTO tasks(command,type,drive,sysip,submittime,logpath,status) VALUES(?,?,?,?,?,?,?)', cmd_tuple_to_use)
+            self.conn.commit()
+            self.logging.info('Added to database: ' + cmd_path)
+            os.remove(cmd_path)
+        except Exception as e:
+            self.logging.error(e)
 
-if __name__ == "__main__":
-    main()
+            
+    def submitted_job_status_sync(self):
+        """
+        Sync the status for tasks with status submit, unsure, doubt and active
 
+        submit -> unsure if missing in ps-ef or active if present
+
+        unsure -> doubt if missing in ps -ef or active if present
+
+        doubt -> error if missing in ps -ef or active if present
+
+        unsure or doubt are used because some of the tape tasks do not start instantly and we may need to wait for sometime before dismissing them as errored
+        :return: None
+        """
+        try:
+            submitted_job_status_dict = {'submit' : 'unsure','unsure': 'doubt','doubt': 'error','active': 'finished'}
+            self.logging.info("Now syncing submitted job status")
+            self.cursor.execute("SELECT * FROM tasks WHERE status in ('submit','unsure','doubt','active')")
+            self.submit_tasks = self.cursor.fetchone()
+            if self.submit_tasks == None:
+                self.logging.info("No jobs with status: submit,doubt or unsure")
+            else:
+                for a_task in self.submit_tasks:
+                    (id,command,type,drive,sysip,submittime,status,logpath,exe_time,finish_time,exception) = a_task
+                    cmd = str("ps -ef")
+                    cmd_out = os.popen(cmd).readlines()
+                    new_status = submitted_job_status_dict[status]
+                    for a_line in cmd_out:
+                        if command in a_line:
+                            new_status = 'active'
+
+                    if new_status == 'finished': # finish_time needs to be added to the job when it finishes
+                        finish_time = time.strftime("%Y%m%d-%H%M%S")
+                        self.cursor.execute('UPDATE tasks SET status = ? , finish_time = ? WHERE id= ?', (new_status, finish_time, id))
+                    else: # no need to add finish_time when the job is not finished
+                        self.cursor.execute('UPDATE tasks SET status = ? WHERE id= ?',(new_status,id))
+                    self.logging.info('Status for task id: ' + id + ' Changed from : '+ status + ' to: ' + new_status )
+                    if type == 'segy_qc'and new_status == 'finished': # management of segy_qc_lock
+                        if os.path.exists(os.path.join(os.getcwd(),'segy_qc_lock')):
+                            try:
+                                os.remove(os.path.join(os.getcwd(),'segy_qc_lock'))
+                                self.logging.info("SEGY QC lock removed for task id: " + id)
+                            except Exception as e:
+                                self.logging.error(e)
+
+        except Exception as e:
+            self.logging.error(e)
+            
+    
+    def submit_new_jobs(self):
+        """
+        Check the availability of resources and submit queued jobs to the tape server
+
+        Execute only one SEGY QC job at a time to prevent from slowing down the system extensively
+
+        :return: None
+        """
+        self.cursor.execute("SELECT * FROM tasks where status =?", ('queue',))
+        queue_tasks = self.cursor.fetchone()
+        if queue_tasks == None:
+            self.logging.info("No tasks in queue at the moment")
+        else:
+            for a_task in queue_tasks:
+                (id, command, type, drive, sysip, submittime, status, logpath, exe_time, finish_time, exception) = a_task
+                if type == 'segy_qc':
+                    if os.path.exists(os.path.join(os.getcwd(),'segy_qc_lock')): # prevent the execution of more than one segy qc at a time
+                        self.logging.info("Holding Task id: " + id + " another SEGY QC task is running")
+                    else:
+                        self.logging.info("Now Submitting Task id: " + id + 'Command => ' + command)
+                        os.system(command)
+                        file_handler = open(os.path.join(os.getcwd(), 'segy_qc_lock'), 'w')
+                        file_handler.close()
+                        self.logging.info("SEGY QC lock created for execution of task id: " + id)
+                        try:
+                            self.cursor.execute("UPDATE tasks SET status = ? WHERE id=?",('submit',id))
+                            self.logging.info('Task id: ' + id + " Changed from queue to submit")
+                        except exception as e:
+                            self.logging.error(e)
+                else:
+                    self.logging.info("Now Submitting Task id: " + id + 'Command => ' + command)
+                    os.system(command)
+                    try:
+                        self.cursor.execute("UPDATE tasks SET status = ? WHERE id=?", ('submit', id))
+                        self.logging.info('Task id: ' + id + " Changed from queue to submit")
+                    except exception as e:
+                        self.logging.error(e)
+
+    def create_active_task_list_for_app(self):
+        """
+        Extract the list of active jobs at the present moment and dump them in form of a pickled dictionary
+
+        { drive name : task details} ::: use segy_qc as the drive for segy qc tasks
+
+        This file is sent to application by a run information sync service using sftp and used to populate logs
+
+        :return: None
+        """
+        self.app_task_sync_lock(mode='create') # create the lock 1st and when this lock file exists the application will not SFTP the active tasks file
+        self.cursor.execute("SELECT * FROM tasks WHERE status=?",('active',))
+        active_tasks = self.cursor.fetchone()
+        active_tasks_dict = {}
+        if active_tasks ==None:
+            self.logging.info("No active Tasks at the moment")
+        else:
+            for a_task in active_tasks:
+                (id, command, type, drive, sysip, submittime, status, logpath, exe_time, finish_time, exception) = a_task
+                key = status
+                data = a_task
+                active_tasks_dict.update({key:data})
+            try:
+                file_handler = open(os.path.join(os.getcwd(),'active_tasks'),'wb')
+                pickle.dump(active_tasks_dict,file_handler)
+                file_handler.close()
+                self.logging.info("Active tasks picke file created")
+            except Exception as e:
+                self.logging.error(e)
+        self.app_task_sync_lock(mode='remove')
+
+
+    def app_task_sync_lock(self,mode):
+        """
+        Creates a file as a lock so that app does not sync the active tasks when the task execution daemaon is still writing to it
+
+        :param mode: create ore remove the lock
+        :return: none
+        """
+        if mode == 'create':
+            try:
+                file_handler = open(os.path.join(os.getcwd(), 'app_task_sync_lock'), 'w')
+                file_handler.close()
+                self.logging.info('App task sync lock created')
+            except Exception as e:
+                self.logging.error(e)
+        elif mode == 'remove':
+            try:
+                os.remove(os.path.join(os.getcwd(), 'app_task_sync_lock'))
+                self.logging.info('App task sync lock remvoed')
+            except Exception as e:
+                self.logging.error(e)
+
+#-------------------------------------------------------------------------------
+def main(db_file_path, mode):
+    """
+    Main function to control the execution of the deliverables_qc task execution daemon
+
+    print the execution status to the screen
+
+    write the detailed summary of execution and Exceptions in a log file
+
+    wait 41 s and run again
+
+    :param db_file_path: The full path of the database files that we need to connect with
+    :param mode: 'normal' for standard execution, 'create_command' to create a test command
+    :return: None
+
+    """
+    if mode == 'create_command':
+        create_test_pickle()
+    elif mode == 'normal':
+        print "Creating log file ....."
+        log_path = create_log_file(db_file_path)
+        print 'Log path: ' + log_path
+        print 'Done  ........'
+        task_execution_service = Task_execution_service(log_path = log_path, database_path = db_file_path)
+        while task_execution_service.database_connection:
+            "Add all new commands supplied by the application to the database"
+            print time.strftime('%a, %d %b %Y %H:%M:%S') + " : Exec => Add new commands to Database"
+            task_execution_service.add_new_commands_to_database()
+            print time.strftime('%a, %d %b %Y %H:%M:%S') + " : Exec => Sync Job status"
+            task_execution_service.submitted_job_status_sync()
+            print time.strftime('%a, %d %b %Y %H:%M:%S') + " : Exec => Create Active tasks for Application"
+            task_execution_service.create_active_task_list_for_app()
+            print time.strftime('%a, %d %b %Y %H:%M:%S') + " : Exec => Submit jobs from queue"
+            task_execution_service.submit_new_jobs()
+            print time.strftime('%a, %d %b %Y %H:%M:%S') + " : Waiting 41 sec before Next cycle"
+            time.sleep(41)
+
+    
+def create_log_file(db_file_path):
+    """    Create the log log file in the current directory
+    :param db_file_path:
+    :return:
+    """
+    log_dir = os.path.join(os.getcwd(),'Task_execution_daemon_logs')
+    try:                  
+        os.stat(log_dir)
+    except:
+        os.mkdir(log_dir)
+
+    log_name = time.strftime("%Y%m%d-%H%M%S") + '.log'
+    log_path = os.path.join(log_dir,log_name)
+    file_handler = open(log_path,'wb')
+    file_handler.write('Autogenerated log file created on : ' + time.strftime('%a, %d %b %Y %H:%M:%S') + '\n')
+    file_handler.write('Database file : ' + db_file_path + '\n')
+    file_handler.write('-'*80 + '\n')
+    file_handler.close()
+    return log_path
+
+
+#-------------------------------------------------------------------------------
+
+def create_test_pickle():
+    type = 'SEGD'
+    cmd = 'I am a test command ' # This needs to be replaced by a shell command later
+    drive = 'dst0'
+    sysip = '10.11.1.192'
+    stime = '123456'
+    status = 'queue'
+    log_path = 'abcdmln;kn;'
+    data_to_pickle = (cmd, type, drive, sysip, stime, log_path,status,)
+    cmd_pickle_path = os.path.join(os.getcwd(), 'from_app','test_pickle4.cmd')
+    file_handler = open(cmd_pickle_path, 'wb')
+    pickle.dump(data_to_pickle, file_handler)
+    file_handler.close()
+
+if __name__ == '__main__':
+    #main(db_file_path=os.path.join(os.getcwd(),'task_database.db'),mode='normal')
+    main(db_file_path= sys.argv[1], mode=sys.argv[2])
+    

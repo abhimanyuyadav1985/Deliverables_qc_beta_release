@@ -3,7 +3,7 @@ import os
 import pickle
 import posixpath
 import shutil
-import cStringIO
+
 
 file_path = os.path.join(os.getcwd(), conn_config_file)
 
@@ -83,11 +83,13 @@ def transfer_SEGY_check_script(DUG_connection_obj):
         decompress_and_softlink_creation(DUG_connection_obj,path_to_check)
 
 def transfer_run_daemons(DUG_connection_obj):
+    create_register_paths(DUG_connection_obj)
     transfer_task_execution_daemon(DUG_connection_obj)
+    transfer_task_database(DUG_connection_obj)
 
 def create_register_paths(DUG_connection_obj):
     dug_path = str(DUG_connection_obj.DUG_proj_path)
-    path_list = [posixpath.join(dug_path,'register'), posixpath.join(dug_path,'register','buffer')]
+    path_list = [posixpath.join(dug_path,'register')]
     for a_path in path_list:
         status = check_generic_path(DUG_connection_obj,a_path)
         if status =='False':
@@ -108,29 +110,22 @@ def transfer_task_execution_daemon(DUG_connection_obj):
         DUG_connection_obj.sftp_client.put(local_path, file_path)
         print "done.."
     else:
-        print "Transferring the Deliverablaes QC task execution Daemon..... "
+        print "Task execution daemaon already exits ..... "
 
-def transfer_lock_states_and_registers(DUG_connection_obj):
-    create_register_paths(DUG_connection_obj)
-    transfer_task_register(DUG_connection_obj)
-
-
-def transfer_task_register(DUG_connection_obj):
+def transfer_task_database(DUG_connection_obj):
     dug_path = str(DUG_connection_obj.DUG_proj_path)
-    path_to_check = posixpath.join(dug_path, 'register', 'task_register')
+    path_to_check = posixpath.join(dug_path, 'register', 'task_database.sqlite3')
     status = check_generic_path(DUG_connection_obj, path_to_check)
     print status
     if status == "False":
         file_path = path_to_check
-        local_path = os.path.join(os.getcwd(), 'dug_ops', 'task_register')
-        if os.path.exists(local_path):
-            print "Transferring the empty SEGD QC register..... ",
-            DUG_connection_obj.sftp_client.put(local_path, file_path)
-            print "done.."
-        else:
-            print "SEGD QC Register lock absent on local machine"
+        local_path = os.path.join(os.getcwd(), 'dug_ops', 'task_database.sqlite3')
+        print "Transferring the Blank task database.... ",
+        DUG_connection_obj.sftp_client.put(local_path, file_path)
+        print "done.."
     else:
-        print "SEGD QC Register already exists on remote host.. "
+        print "Task database already exists..... "
+
 
 def decompress_and_softlink_creation(DUG_connection_obj,path_to_check):
     DUG_segy_path = str(DUG_connection_obj.DUG_proj_path)

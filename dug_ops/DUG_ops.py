@@ -10,12 +10,12 @@ file_path = os.path.join(os.getcwd(), conn_config_file)
 def main():
     print "You are in DUG ops script"
 
-def transfer_task_logger(DUG_connection_obj):
-    print "Now transferring task_logger",
-    file_path_2 = '/d/home/share/bin/task_logger.py'
-    local_path_2 = os.path.join(os.getcwd(), "dug_ops", 'task_logger.py')
-    DUG_connection_obj.sftp_client.put(local_path_2, file_path_2)
-    print "done.."
+# def transfer_task_logger(DUG_connection_obj):
+#     print "Now transferring task_logger",
+#     file_path_2 = '/d/home/share/bin/task_logger.py'
+#     local_path_2 = os.path.join(os.getcwd(), "dug_ops", 'task_logger.py')
+#     DUG_connection_obj.sftp_client.put(local_path_2, file_path_2)
+#     print "done.."
 
 def transfer_run_log_fetcher(DUG_connection_obj):
     print "Now transferring the run log fetcher",

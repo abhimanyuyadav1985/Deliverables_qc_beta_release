@@ -173,7 +173,7 @@ class Top_Window(QtGui.QMainWindow):
 
         :return: none
         """
-        self.working_widget = QtGui.QWidget()
+        self.working_widget = QtGui.QScrollArea()
         self.layout.addWidget(self.working_widget, 1, 1)
 
         self.logging.info("Dummy central widget set")
@@ -209,7 +209,7 @@ class Top_Window(QtGui.QMainWindow):
         thread_dock_title = create_central_labels('Thread status')
         thread_dock_title.setStyleSheet('background-color: rgb(65,65,65);color: white')
         thread_dock_title.setFont(QtGui.QFont('SansSerif', 15))
-        self.layout.addWidget(thread_dock_title, 0, 4)
+        self.layout.addWidget(thread_dock_title, 0, 3)
 
         self.logging.info("Application layout title elements set")
 
@@ -253,7 +253,7 @@ class Top_Window(QtGui.QMainWindow):
     def add_thread_dock(self):
         self.thread_dock = threads_dock(self)
         self.thread_dock.setFixedWidth(220)
-        self.layout.addWidget(self.thread_dock, 1, 4)
+        self.layout.addWidget(self.thread_dock, 1, 3)
 
         self.logging.info("Threads dock set")
 
@@ -395,10 +395,11 @@ class Top_Window(QtGui.QMainWindow):
 
         :return: None
         """
-
-
-        self.run_startup_sync_service()
-        self.run_job_sync_service()
+        if self.config_check is True:
+            self.run_startup_sync_service()
+            self.run_job_sync_service()
+        else:
+            print "No valid configuration in use"
 
 
 
@@ -421,6 +422,8 @@ class Top_Window(QtGui.QMainWindow):
         self.run_startup_sync_service()
 
         self.run_job_sync_service()
+
+
 
 
 

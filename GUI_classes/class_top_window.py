@@ -8,7 +8,7 @@ from dug_ops.DUG_connection import DUG_connection_object
 from dug_ops.DUG_ops import transfer_SEGY_check_script,transfer_base_64_encoder,transfer_SEGD_QC_parser_script
 from dug_ops.DUG_ops import check_generic_path,create_generic_directory
 from general_functions.class_synchronization_service import Synchronization_service
-from dug_ops.DUG_ops import transfer_lock_states_and_registers, transfer_run_daemons, transfer_task_logger, transfer_run_log_fetcher
+from dug_ops.DUG_ops import transfer_run_daemons, transfer_run_log_fetcher
 from dug_ops.DUG_ops import run_command_on_tape_server
 #-------------------------------------------------------------------
 # Widgets
@@ -352,9 +352,7 @@ class Top_Window(QtGui.QMainWindow):
         transfer_base_64_encoder(self.DUG_connection_obj)
         transfer_SEGD_QC_parser_script(self.DUG_connection_obj)
         transfer_SEGY_check_script(self.DUG_connection_obj)
-        transfer_lock_states_and_registers(self.DUG_connection_obj)
         transfer_run_daemons(self.DUG_connection_obj)
-        transfer_task_logger(self.DUG_connection_obj)
         transfer_run_log_fetcher(self.DUG_connection_obj)
         self.logging.info("File transfer to DUG system complete")
 

@@ -207,7 +207,7 @@ class Task_execution_service(object):
                 file_handler = open(os.path.join(os.getcwd(),'active_tasks'),'wb')
                 pickle.dump(active_tasks_dict,file_handler)
                 file_handler.close()
-                self.logging.info("Active tasks picke file created")
+                self.logging.info("Active tasks pickle file created")
             except Exception as e:
                 self.logging.error(e)
         self.app_task_sync_lock(mode='remove')

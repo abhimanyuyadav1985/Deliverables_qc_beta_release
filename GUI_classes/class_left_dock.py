@@ -94,7 +94,7 @@ class left_dock(QtGui.QWidget):
         self.pb_run_info.clicked.connect(self.active_task_info)
 
         self.pb_connect = QtGui.QPushButton('Connect')
-        self.pb_connect.clicked.connect(self.parent.verified_start_up_protocol)
+        self.pb_connect.clicked.connect(self.parent.check_existing_config)
 
 
         grid = QtGui.QGridLayout()

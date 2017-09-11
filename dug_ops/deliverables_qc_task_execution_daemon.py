@@ -310,6 +310,6 @@ def create_test_pickle():
     file_handler.close()
 
 if __name__ == '__main__':
-    #main(db_file_path=os.path.join(os.getcwd(),'task_database.db'),mode='normal')
-    main(db_file_path= sys.argv[1], mode=sys.argv[2])
+    main(db_file_path=os.path.join(os.getcwd(),'task_database.db'),mode='normal') # use this option in production environment
+    #main(db_file_path= sys.argv[1], mode=sys.argv[2])
     

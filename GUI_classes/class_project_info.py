@@ -2,7 +2,7 @@ from PyQt4 import QtGui,QtCore
 from general_functions.general_functions import create_central_labels, create_left_blank, create_center_data
 from database_engine.DB_ops import fetch_project_info
 
-class project_info(QtGui.QScrollArea):
+class project_info(QtGui.QWidget):
     closed = QtCore.pyqtSignal()
 
     def __init__(self, parent):

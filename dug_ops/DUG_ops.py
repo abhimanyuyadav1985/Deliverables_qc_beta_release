@@ -3,6 +3,9 @@ import os
 import pickle
 import posixpath
 import shutil
+import socket
+import time
+import uuid
 
 
 file_path = os.path.join(os.getcwd(), conn_config_file)
@@ -218,37 +221,30 @@ def get_file_timestamp(DUG_connection_obj,file_path):
     return std_out
 
 
+def create_a_pickle_file_for_command(register_obj):
+    status = 'queue'
+    sysip = str(socket.gethostbyname(socket.gethostname()))
+    submit_time = time.strftime("%Y%m%d-%H%M%S")
+    run_cmd = register_obj[0]
+    tape_drive = register_obj[1]
+    log_path = register_obj[2]
+    type = register_obj[3]
+    cmd_tuple = (run_cmd, type, tape_drive, sysip, submit_time, log_path, status)
+    file_name = str(uuid.uuid4())
+    file_path = os.path.join(os.getcwd(),'temp',file_name)
+    file_handler = open(file_path,'wb')
+    pickle.dump(cmd_tuple, file_handler)
+    file_handler.close()
+
+    return (file_path,file_name)
+
+
 def append_register_entry(DUG_connection_obj, register_obj):
-    # 1st read the execution log state
-    local_path = os.path.join(os.getcwd(), 'dug_ops', 'buffer_lock')
+    (local_path,file_name) = create_a_pickle_file_for_command(register_obj)
     dug_path = DUG_connection_obj.DUG_proj_path
-    remote_path = posixpath.join(dug_path, 'register', 'buffer', 'buffer_lock')
-    print "Buffer lock created on remote host.."
+    remote_path = posixpath.join(dug_path, 'register','from_app', file_name)
     DUG_connection_obj.sftp_client.put(local_path, remote_path)
-    file_handler = open(os.path.join(os.getcwd(), 'temp', 'task_register'), 'rb')
-    segd_qc_register = pickle.load(file_handler)
-    file_handler.close()
-    segd_qc_register.append(register_obj)
-    print "Adding the command to local buffer",
-    os.remove(os.path.join(os.getcwd(), 'temp', 'task_register'))
-    file_handler = open(os.path.join(os.getcwd(), 'temp', 'task_register'), 'wb')
-    pickle.dump(segd_qc_register, file_handler)
-    file_handler.close()
-    print "Done .."
-    remote_register_path = posixpath.join(dug_path, 'register', 'buffer', 'task_register')
-    local_register_path = os.path.join(os.getcwd(), 'temp', 'task_register')
-    status = check_generic_path(DUG_connection_obj, remote_register_path)
-    if status == 'True':
-        DUG_connection_obj.sftp_client.remove(remote_register_path)
-    print "Transferring buffer to remote host..",
-    DUG_connection_obj.sftp_client.put(local_register_path, remote_register_path)
-    print "Done .."
-    print "Flusing local buffers ..",
-    shutil.copy(os.path.join(os.getcwd(), 'dug_ops', 'task_register'), os.path.join(os.getcwd(), 'temp'))
-    print "Done"
-    print "Now deleting buffer lock .."
-    DUG_connection_obj.sftp_client.remove(remote_path)
-    print "Done.."
+    print "sucessfully transferred: " + local_path
 
 
 if __name__ == '__main__':

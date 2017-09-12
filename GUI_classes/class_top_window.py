@@ -380,7 +380,7 @@ class Top_Window(QtGui.QMainWindow):
         self.logging.info(str("Starting Task execution sync service: " + run_sync_thread_name))
         self.run_sync_service.doingWork.connect(self.thread_dock.thread_control)
         self.run_sync_service.cmdcontrol.connect(self.run_sync_command)
-        self.run_sync_service.update_tape_dashboard.connect(self.upate_command_on_tape_dashboard)
+        self.run_sync_service.update_tape_dashboard.connect(self.update_command_on_tape_dashboard)
         self.run_sync_thread_to_use.start_now()
 
 
@@ -456,23 +456,21 @@ class Top_Window(QtGui.QMainWindow):
             self.tape_dashboard_visible = True
             self.tape_dashboard = Tape_drive_dashboard(self)
             self.layout.addWidget(self.tape_dashboard, 3, 0, 1,5)
-            self.upate_command_on_tape_dashboard()
+            self.update_command_on_tape_dashboard()
 
 
-    def upate_command_on_tape_dashboard(self):
+    def update_command_on_tape_dashboard(self):
         if self.tape_dashboard_visible == False:
             pass
         else:
-            if os.path.exists(os.path.join(os.getcwd(),'temp','task_log')):
-                file_handler = open(os.path.join(os.getcwd(),'temp','task_log'),'rb')
-                task_list = pickle.load(file_handler)
+            if os.path.exists(os.path.join(os.getcwd(),'temp','busy_dev')):
+                file_handler = open(os.path.join(os.getcwd(),'temp','busy_dev'),'rb')
+                task_dict = pickle.load(file_handler)
                 file_handler.close()
-                for a_task in task_list:
-                    device = a_task[1]
-                    dev_string = a_task[0]
-                    if dev_string in self.tape_dashboard.tape_operation_manager.tape_service.available_dst:
-                        self.tape_dashboard.dst_widget_dict[device].clear()
-                        self.tape_dashboard.dst_widget_dict[device].append(dev_string)
+                for a_dev in task_dict.keys():
+                    if a_dev in self.tape_dashboard.tape_operation_manager.tape_service.available_dst:
+                        self.tape_dashboard.dst_widget_dict[a_dev].clear()
+                        self.tape_dashboard.dst_widget_dict[a_dev].append(task_dict[a_dev][0])
             else:
                 pass
 

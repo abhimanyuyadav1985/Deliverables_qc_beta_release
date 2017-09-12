@@ -62,7 +62,9 @@ class segy_write_multiple(QtGui.QWidget):
 
         self.combo_line = file_selection(self)
         self.combo_line.setObjectName("File name")
+        self.combo_line.setFixedHeight(600)
         self.grid.addWidget(self.combo_line, 3, 1)
+
 
         self.combo_set = QtGui.QComboBox()
         self.combo_set.setObjectName("Set no")

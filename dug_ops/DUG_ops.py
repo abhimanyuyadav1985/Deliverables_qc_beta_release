@@ -89,7 +89,7 @@ def transfer_run_daemons(DUG_connection_obj):
 
 def create_register_paths(DUG_connection_obj):
     dug_path = str(DUG_connection_obj.DUG_proj_path)
-    path_list = [posixpath.join(dug_path,'register')]
+    path_list = [posixpath.join(dug_path,'register'),posixpath.join(dug_path,'register','from_app')]
     for a_path in path_list:
         status = check_generic_path(DUG_connection_obj,a_path)
         if status =='False':
@@ -97,6 +97,7 @@ def create_register_paths(DUG_connection_obj):
             create_generic_directory(DUG_connection_obj,a_path)
         else:
             print 'Found : ' + a_path
+
 
 def transfer_task_execution_daemon(DUG_connection_obj):
     dug_path = str(DUG_connection_obj.DUG_proj_path)

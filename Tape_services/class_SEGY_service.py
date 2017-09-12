@@ -38,7 +38,7 @@ class SEGY_service(object):
             print "Running in DEMO mode command will only be printed not executed ...."
             print run_cmd
         elif use_mode == 'Production':
-            segd_qc_register_obj = [run_cmd, self.parent.tape_drive, self.log_path]
+            segd_qc_register_obj = [run_cmd, self.parent.tape_drive, self.log_path, 'segy_w']
             print "Now adding the SEGY write task to buffers .."
             append_register_entry(self.DUG_connection_obj, segd_qc_register_obj)
 
@@ -385,7 +385,7 @@ class SEGY_service(object):
                 print "Done..."
                 print "Now running the QC again"
                 print cmd
-            register_entry_to_append = [cmd, 'segy_qc', self.qc_log_path]
+            register_entry_to_append = [cmd, 'na', self.qc_log_path, 'segy_qc',]
             append_register_entry(self.DUG_connection_obj,register_entry_to_append)
 
     def choose_sgy_file_for_QC(self,option):

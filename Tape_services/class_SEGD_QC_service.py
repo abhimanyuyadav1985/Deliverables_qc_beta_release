@@ -16,7 +16,7 @@ class SEGD_QC_service(object):
         elif use_mode == 'Production':
             print run_cmd
             self.check_for_previous_run()
-            segd_qc_register_obj = [run_cmd , self.parent.tape_drive, self.logfile]
+            segd_qc_register_obj = [run_cmd , self.parent.tape_drive, self.logfile , 'segd_qc']
             print "Now adding the SEGD QC task to buffers .."
             append_register_entry(self.parent.DUG_connection_obj,segd_qc_register_obj)
 

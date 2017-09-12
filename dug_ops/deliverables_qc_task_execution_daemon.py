@@ -200,7 +200,7 @@ class Task_execution_service(object):
         else:
             for a_task in active_tasks:
                 (id, command, type, drive, sysip, submittime, status, logpath, exe_time, finish_time, exception) = a_task
-                key = status
+                key = drive
                 data = a_task
                 active_tasks_dict.update({key:data})
             try:

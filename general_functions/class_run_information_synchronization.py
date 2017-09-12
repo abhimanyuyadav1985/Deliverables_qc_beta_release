@@ -23,64 +23,71 @@ class run_information_sync(QtCore.QObject):
 
     def run_and_flush(self):
         while True:
-            dug_proj_path = self.DUG_proj_path
-            register_dir_path = posixpath.join(dug_proj_path,'register')
-            cmd = str('python /d/home/share/bin/task_logger.py ' + register_dir_path + ' flush')
-            self.cmdcontrol.emit(cmd)
-            string_to_add = str(str(datetime.now()) + ' : Refreshed the task log status')
-            print string_to_add
-            self.doingWork.emit(True,string_to_add,self.thread_name)
-            self.create_busy_device_list()
-            self.update_tape_dashboard.emit()
-            time.sleep(30)
+            self.import_task_log()
+            time.sleep(31)
 
 
     def create_busy_device_list(self):
-        self.import_task_log()
         busy_dev_path = os.path.join(os.getcwd(),'temp','busy_dev')
-        busy_dev_list = []
-        for a_task in self.task_list:
-            busy_dev_list.append(a_task[1])
         if os.path.exists(busy_dev_path):
             os.remove(busy_dev_path)
         else:
             print "Creating busy devices file : " + busy_dev_path
             file_handler = open(busy_dev_path, 'wb')
-            pickle.dump(busy_dev_list, file_handler)
+            pickle.dump(self.task_dict, file_handler)
             file_handler.close()
             print "Done ..."
+            self.update_tape_dashboard.emit()
 
 
     def import_task_log(self):
+        self.doingWork.emit(True, "Importing task log", self.thread_name)
         proj_path = self.DUG_proj_path
-        remote_path = posixpath.join(proj_path, 'register', 'task_log')
-        local_path = os.path.join(os.getcwd(), 'temp', 'task_log')
+        remote_path = posixpath.join(proj_path, 'register', 'active_tasks')
+        remote_lock_path = posixpath.join(proj_path,'register','app_task_sync_lock')
+
+        local_path = os.path.join(os.getcwd(), 'temp', 'active_tasks')
         if os.path.exists(local_path):
             try:
                 os.remove(local_path)
             except:
-                print "Exception: Local task_log_busy"
-        status = check_generic_path(self.DUG_connection_obj, remote_path)
-        if status == 'True':
-            # Now FTP the file
-            print "Now copying over the task log from remote host ..",
-            try:
-                self.DUG_connection_obj.sftp_client.get(remote_path, local_path)
-                print 'Done ..'
-                self.local_path = local_path
-                self.extract_task_info()
-            except:
-                print "Exception: Unable to copy to local host "
+                print "Exception: Local task_log_busy waiting 7s"
+                self.doingWork.emit(True, "Exception: Local task_log_busy waiting 7s", self.thread_name)
+                time.sleep(7)
+                self.import_task_log()
+        status_lock = check_generic_path(self.DUG_connection_obj,remote_lock_path)
+        if status_lock == 'True':
+            print "Deliverables QC daemon is writing to file, wait 5s"
+            self.doingWork.emit(True, "Deliverables QC daemon is writing to file, wait 5s", self.thread_name)
+            time.sleep(5)
+            self.import_task_log()
         else:
-            print "Task log missing on remote host.."
+            status = check_generic_path(self.DUG_connection_obj, remote_path)
+            if status == 'True':
+                # Now FTP the file
+                print "Now copying over the task log from remote host ..",
+                self.doingWork.emit(True, "Now copying over the task log from remote host ..", self.thread_name)
+                try:
+                    self.DUG_connection_obj.sftp_client.get(remote_path, local_path)
+                    print 'Done ..'
+                    self.local_path = local_path
+                    self.extract_task_info()
+                except:
+                    print "Exception: Unable to copy to local host "
+                    self.doingWork.emit(True, "Exception: Unable to copy to local host ", self.thread_name)
+            else:
+                print "No active tasks on  remote host.."
+                self.doingWork.emit(True, "No active tasks on  remote host..", self.thread_name)
 
 
     def extract_task_info(self):
         file_handler = open(self.local_path, 'rb')
-        self.task_list = pickle.load(file_handler)
+        self.task_dict = pickle.load(file_handler)
         file_handler.close()
-        if len(self.task_list) == 0:
+        if len(self.task_dict.keys()) == 0:
             print "No active tasks available"
+        else:
+            self.create_busy_device_list()
 
 
 

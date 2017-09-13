@@ -157,7 +157,7 @@ class SEGY_service(object):
 
         dir_path = self.parent.dir_service.data_dir_path_dict['data']
 
-        segy_write_dao_list = get_all_SEGY_write_objects(self.parent.db_connection_obj, self.parent.deliverable.id)
+        segy_write_dao_list = get_all_SEGY_write_objects(self.parent.db_connection_obj)
         segy_qc_dao_list = get_all_SEGY_qc_objects(self.parent.db_connection_obj, self.parent.deliverable.id)
 
         # convert the dao lists to dictionary that we will use

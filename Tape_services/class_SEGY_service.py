@@ -170,7 +170,7 @@ class SEGY_service(object):
         file_path_write_dict = {}
         for a_qc_dao in segy_qc_dao_list:
             file_path = a_qc_dao.segy_on_disk_file_path
-            if a_qc_dao.id_segy_qc_on_disk in write_dao_dict.keys():
+            if a_qc_dao.id_seq_segy_qc in write_dao_dict.keys():
                 tape_write_status = write_dao_dict[a_qc_dao.id_seq_segy_qc]
                 file_path_write_dict.update({file_path : tape_write_status})
             else:

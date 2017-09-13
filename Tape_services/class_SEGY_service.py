@@ -180,6 +180,8 @@ class SEGY_service(object):
         for a_file in file_list:
             a_file_path = posixpath.join(dir_path,a_file)
             if file_path_write_dict[a_file_path] == True:
+                pass
+            else:
                 file_list_removed.append(a_file)
 
         return file_list_removed

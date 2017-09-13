@@ -1,5 +1,4 @@
 import posixpath
-from datetime import datetime
 from PyQt4 import QtCore
 import time
 from dug_ops.DUG_ops import check_generic_path
@@ -28,7 +27,7 @@ class run_information_sync(QtCore.QObject):
 
 
     def create_busy_device_list(self):
-        busy_dev_path = os.path.join(os.getcwd(),'temp','busy_dev')
+        busy_dev_path = os.path.join(os.getcwd(),'temp','active_tasks')
         if os.path.exists(busy_dev_path):
             os.remove(busy_dev_path)
         else:

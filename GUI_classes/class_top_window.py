@@ -173,7 +173,11 @@ class Top_Window(QtGui.QMainWindow):
 
         :return: none
         """
-        self.working_widget = QtGui.QScrollArea()
+        plcs_logo = QtGui.QLabel()
+        myPixmap = QtGui.QPixmap(os.path.join(os.getcwd(), media_path, 'deliverables_qc.png'))
+        pixmap_resized = myPixmap.scaled(800, 800, QtCore.Qt.KeepAspectRatio)
+        plcs_logo.setPixmap(pixmap_resized)
+        self.working_widget = plcs_logo
         self.layout.addWidget(self.working_widget, 1, 1)
 
         self.logging.info("Dummy central widget set")
@@ -463,8 +467,8 @@ class Top_Window(QtGui.QMainWindow):
         if self.tape_dashboard_visible == False:
             pass
         else:
-            if os.path.exists(os.path.join(os.getcwd(),'temp','busy_dev')):
-                file_handler = open(os.path.join(os.getcwd(),'temp','busy_dev'),'rb')
+            if os.path.exists(os.path.join(os.getcwd(),'temp','active_tasks')):
+                file_handler = open(os.path.join(os.getcwd(),'temp','active_tasks'),'rb')
                 task_dict = pickle.load(file_handler)
                 file_handler.close()
                 for a_dev in task_dict.keys():

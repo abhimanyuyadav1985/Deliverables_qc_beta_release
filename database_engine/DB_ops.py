@@ -345,5 +345,14 @@ def get_all_SEGD_QC_for_deliverable(obj,deliverable_id):
     obj_list = obj.sess.query(obj.SEGD_qc).filter(obj.SEGD_qc.deliverable_id == deliverable_id).order_by(obj.SEGD_qc.set_no).order_by(obj.SEGD_qc.tape_no).all()
     return obj_list
 
+
+def get_all_SEGY_write_objects(obj):
+    obj_list = obj.sess.query(obj.SEGY_write).all()
+    return obj_list
+
+def get_all_SEGY_qc_objects(obj):
+    obj_list = obj.sess.query(obj.SEGY_QC_on_disk).all()
+    return obj_list
+
 if __name__=="__main__":
     fetch_deliverables_list()

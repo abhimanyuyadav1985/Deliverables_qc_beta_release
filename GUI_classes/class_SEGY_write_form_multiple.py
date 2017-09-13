@@ -192,7 +192,6 @@ class file_selection(QtGui.QScrollArea):
 
         self.widget.setLayout(self.grid)
         self.setWidget(self.widget)
-        self.parent.combo_line.setMinimumHeight(int((len(self.parent.file_list)+1)*10))
         self.parent.resize(self.parent.sizeHint())
         self.setStyleSheet('background-color: None')
         self.show()

@@ -4,7 +4,7 @@ from GUI_classes.class_pop_up_combo_box import pop_up_combo_box
 from GUI_classes.class_pop_up_message_box import pop_up_message_box
 from general_functions.class_deliverables_dir_service_through_db import deliverable_dir_service_through_db
 from general_functions.class_deliverables_file_service import deliverable_file_service
-from database_engine.DB_ops import get_all_production_sequences
+from database_engine.DB_ops import get_all_production_sequences, get_all_SEGY_qc_objects, get_all_SEGY_write_objects
 from dug_ops.segy_templ import create_sgyt,create_3D_sgyt
 from general_functions.general_functions import get_item_through_dialogue
 import posixpath
@@ -143,6 +143,47 @@ class SEGY_service(object):
                 file_size_dict.update({a_segy: size_for_file})
                 self.approved_obj_dict.update({a_segy:temp_dict[a_segy_path]})
         return (combo_list_for_tape_write, file_size_dict)
+
+
+    def remove_files_written_to_tape(self,file_list):
+        """
+        check with the database to get the SEGy QC id for the file and move to segy write file to check if the file is writeen to tape before for
+        the particular set
+
+        :param file_list:
+        :return: removed file list with only the files that have not been writteen to the tape before
+        """
+        file_list_removed = []
+
+        dir_path = self.parent.dir_service.data_dir_path_dict['data']
+
+        segy_write_dao_list = get_all_SEGY_write_objects(self.parent.db_connection_obj, self.parent.deliverable.id)
+        segy_qc_dao_list = get_all_SEGY_qc_objects(self.parent.db_connection_obj, self.parent.deliverable.id)
+
+        # convert the dao lists to dictionary that we will use
+        write_dao_dict = {}
+        for a_write_dao in segy_write_dao_list:
+            qc_id = a_write_dao.id_segy_qc
+            if str(a_write_dao.set_number) == str(self.parent.set_no):
+                write_dao_dict.update({qc_id : a_write_dao.tape_write_status})
+
+        file_path_write_dict = {}
+        for a_qc_dao in segy_qc_dao_list:
+            file_path = a_qc_dao.segy_on_disk_file_path
+            if a_qc_dao.id_segy_qc_on_disk in write_dao_dict.keys():
+                tape_write_status = write_dao_dict[a_qc_dao.id_segy_qc_on_disk]
+                file_path_write_dict.update({file_path : tape_write_status})
+            else:
+                file_path_write_dict.update({file_path: False})
+
+
+        for a_file in file_list:
+            a_file_path = posixpath.join(dir_path,a_file)
+            if file_path_write_dict[a_file_path] == True:
+                file_list_removed.append(a_file)
+
+        return file_list_removed
+
 
 
     def set_SEGY_path_multiple(self, file_list):

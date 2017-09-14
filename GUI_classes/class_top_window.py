@@ -459,7 +459,7 @@ class Top_Window(QtGui.QMainWindow):
         else:
             self.tape_dashboard_visible = True
             self.tape_dashboard = Tape_drive_dashboard(self)
-            self.layout.addWidget(self.tape_dashboard, 3, 0, 1,5)
+            self.layout.addWidget(self.tape_dashboard, 3, 0, 1,4)
             self.update_command_on_tape_dashboard()
 
 
@@ -468,7 +468,7 @@ class Top_Window(QtGui.QMainWindow):
             pass
         else:
             if os.path.exists(os.path.join(os.getcwd(),'temp','active_tasks')):
-                file_handler = open(os.path.join(os.getcwd(),'temp','active_tasks'),'rb')
+                file_handler = open(os.path.join(os.getcwd(),'temp','active_tasksF'),'rb')
                 task_dict = pickle.load(file_handler)
                 file_handler.close()
                 for a_dev in task_dict.keys():

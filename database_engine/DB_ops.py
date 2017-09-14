@@ -212,8 +212,7 @@ def get_list_of_applicable_SEGD_tapes(obj, seq_name):
     tapes = obj.sess.query(obj.SEGD_tapes).filter(obj.SEGD_tapes.sequence_number == seq_id).all()
     tape_list = []
     for obj in tapes:
-        for obj in tapes:
-            tape_list.append(obj.name)
+        tape_list.append(obj.name)
     return tape_list
 
 def get_min_max_ffid_tuple_for_tape(obj,tape_name):

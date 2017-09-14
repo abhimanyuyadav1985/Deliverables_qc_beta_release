@@ -19,8 +19,8 @@ class SEGD_QC_Form(QtGui.QWidget):
         self.grid.addWidget(create_central_labels('SEGD QC Input'),0,0,1,3)
         self.grid.addWidget(create_central_labels('Select Drive'),1,0)
         self.grid.addWidget(create_central_labels('Select Deliverable'),2,0)
-        self.grid.addWidget(create_central_labels('Select line'),3,0)
-        self.grid.addWidget(create_central_labels('Select set'),4,0)
+        self.grid.addWidget(create_central_labels('Select line'),4,0)
+        self.grid.addWidget(create_central_labels('Select set'),3,0)
         self.grid.addWidget(create_central_labels('Select Tape'),5,0)
         self.grid.addWidget(create_central_labels('Confirm Tape'),6,0)
 
@@ -29,7 +29,7 @@ class SEGD_QC_Form(QtGui.QWidget):
 
 
         self.pb_execute = QtGui.QPushButton('Run')
-        self.grid.addWidget(self.pb_execute,6,2)
+        self.grid.addWidget(self.pb_execute,8,0)
         self.pb_execute.clicked.connect(self.execute)
 
 
@@ -57,27 +57,35 @@ class SEGD_QC_Form(QtGui.QWidget):
 
         self.combo_line = QtGui.QComboBox()
         self.combo_line.setObjectName("Line name")
-        self.grid.addWidget(self.combo_line,3,1)
-        self.combo_line.blockSignals(False)
+        self.grid.addWidget(self.combo_line,4,1)
+        self.combo_line.blockSignals(True)
         self.combo_line.currentIndexChanged.connect(self.line_selected)
 
 
         self.combo_set = QtGui.QComboBox()
         self.combo_set.setObjectName("Set no")
-        self.grid.addWidget(self.combo_set,4,1)
-        self.combo_set.blockSignals(False)
+        self.grid.addWidget(self.combo_set,3,1)
+        self.combo_set.blockSignals(True)
         self.combo_set.currentIndexChanged.connect(self.set_selected)
 
 
         self.combo_tape = QtGui.QComboBox()
         self.combo_tape.setObjectName("Tape no")
         self.grid.addWidget(self.combo_tape,5,1)
-        self.combo_tape.blockSignals(False)
+        self.combo_tape.blockSignals(True)
         self.combo_tape.currentIndexChanged.connect(self.tape_selected)
 
 
         self.line_tape = QtGui.QLineEdit()
         self.grid.addWidget(self.line_tape,6,1)
+
+        self.chk_locked = QtGui.QCheckBox("Tape lock check")
+        self.grid.addWidget(self.chk_locked,7,1)
+
+
+        self.chk_noqc = QtGui.QCheckBox("Remove previoously checked")
+        self.grid.addWidget(self.chk_noqc,8,1)
+        self.chk_noqc.stateChanged.connect(self.toggle_line_list)
 
 
         self.setLayout(self.grid)
@@ -93,23 +101,11 @@ class SEGD_QC_Form(QtGui.QWidget):
         deliverable = str( self.combo_deliverable.currentText())
         print "Deliverable is set to: " + deliverable
         self.parent.tape_operation_manager.set_deliverable(deliverable)
-        self.combo_line.clear()
-        self.combo_line.addItems(self.parent.tape_operation_manager.service_class.get_list_of_available_segd_seq())
-        self.combo_line.setCurrentIndex(-1)
+        self.combo_set.clear()
+        self.combo_set.addItems(self.parent.tape_operation_manager.get_deliverable_set_list())
+        self.combo_set.setCurrentIndex(-1)
+        self.combo_set.blockSignals(False)
 
-
-    def line_selected(self):
-        if int(self.combo_line.currentIndex()) == -1:
-            self.combo_set.clear()
-            self.combo_set.setCurrentIndex(-1)
-        else:
-            line_name = str(self.combo_line.currentText())
-            print "Line name is set to: " + line_name
-            self.parent.tape_operation_manager.set_seq_name(line_name)
-            self.parent.tape_operation_manager.service_class.set_SEGD_path(line_name)
-            self.combo_set.clear()
-            self.combo_set.addItems(self.parent.tape_operation_manager.get_deliverable_set_list())
-            self.combo_set.setCurrentIndex(-1)
 
 
     def set_selected(self):
@@ -119,9 +115,38 @@ class SEGD_QC_Form(QtGui.QWidget):
         else:
             set_no = str(self.combo_set.currentText())
             print "Set no is set to: " + str(set_no)
+            self.combo_line.clear()
+            self.line_list = self.parent.tape_operation_manager.service_class.get_list_of_available_segd_seq()
+            self.unchecked_line_list = self.parent.tape_operation_manager.service_class.get_list_of_unchecked_SEGD_seq_for_set(self.line_list)
+            self.toggle_line_list()
+
+
+
+    def line_selected(self):
+        if int(self.combo_line.currentIndex()) == -1:
+            self.combo_tape.clear()
+            self.combo_tape.setCurrentIndex(-1)
+        else:
+            line_name = str(self.combo_line.currentText())
+            print "Line name is set to: " + line_name
+            self.parent.tape_operation_manager.set_seq_name(line_name)
+            self.parent.tape_operation_manager.service_class.set_SEGD_path(line_name)
             self.combo_tape.clear()
             self.combo_tape.addItems(self.parent.tape_operation_manager.service_class.get_list_of_applicable_segd_tapes())
             self.combo_tape.setCurrentIndex(-1)
+            self.combo_tape.blockSignals(False)
+
+    def toggle_line_list(self):
+        if self.chk_noqc.isChecked() is True:
+            self.combo_line.clear()
+            self.combo_line.addItems(self.unchecked_line_list)
+            self.combo_line.setCurrentIndex(-1)
+            self.combo_line.blockSignals(False)
+        else:
+            self.combo_line.clear()
+            self.combo_line.addItems(self.line_list)
+            self.combo_line.setCurrentIndex(-1)
+            self.combo_line.blockSignals(False)
 
 
     def tape_selected(self):
@@ -130,7 +155,6 @@ class SEGD_QC_Form(QtGui.QWidget):
         else:
             tape = str(self.combo_tape.currentText())
             print "Tape is set to: " + tape
-
 
 
     def execute(self):
@@ -148,25 +172,28 @@ class SEGD_QC_Form(QtGui.QWidget):
                 print str(a_combo.objectName()) + " : Is blank aborting"
 
         if combo_entry_check == True:
-            dst = str(self.combo_tape_drive.currentText())
-            self.parent.tape_operation_manager.set_tape_drive(dst)
-            deliverable = str(self.combo_deliverable.currentText())
-            self.parent.tape_operation_manager.set_deliverable(deliverable)
-            line_name = str(self.combo_line.currentText())
-            self.parent.tape_operation_manager.set_seq_name(line_name)
-            self.parent.tape_operation_manager.service_class.set_SEGD_path(line_name)
-            set_no = str(self.combo_set.currentText())
-            self.parent.tape_operation_manager.set_working_set(set_no)
-            tape = str(self.combo_tape.currentText())
-            self.parent.tape_operation_manager.set_tape_name(tape)
-            self.parent.tape_operation_manager.service_class.set_logfile()
-            # Now perform tape manual vs auto check
-            if str(self.combo_tape.currentText()) == str(self.line_tape.text()):
-                print " Ok to run"
-                self.parent.tape_operation_manager.service_class.run()
-                self.close()
+            if self.chk_locked.isChecked() is True:
+                dst = str(self.combo_tape_drive.currentText())
+                self.parent.tape_operation_manager.set_tape_drive(dst)
+                deliverable = str(self.combo_deliverable.currentText())
+                self.parent.tape_operation_manager.set_deliverable(deliverable)
+                line_name = str(self.combo_line.currentText())
+                self.parent.tape_operation_manager.set_seq_name(line_name)
+                self.parent.tape_operation_manager.service_class.set_SEGD_path(line_name)
+                set_no = str(self.combo_set.currentText())
+                self.parent.tape_operation_manager.set_working_set(set_no)
+                tape = str(self.combo_tape.currentText())
+                self.parent.tape_operation_manager.set_tape_name(tape)
+                self.parent.tape_operation_manager.service_class.set_logfile()
+                # Now perform tape manual vs auto check
+                if str(self.combo_tape.currentText()) == str(self.line_tape.text()):
+                    print " Ok to run"
+                    self.parent.tape_operation_manager.service_class.run()
+                    self.close()
+                else:
+                    print "Manual and Db entries for tape do not match"
             else:
-                print "Manual and Db entries for tape do not match"
+                print "Please make sure that the SEGD tape is locked !!"
 
 
 

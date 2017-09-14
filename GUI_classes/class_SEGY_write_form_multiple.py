@@ -70,7 +70,7 @@ class segy_write_multiple(QtGui.QWidget):
         self.combo_set.setObjectName("Set no")
         self.grid.addWidget(self.combo_set, 3, 1,1,2)
 
-        self.combo_set.blockSignals(False)
+        self.combo_set.blockSignals(True)
         self.combo_set.setCurrentIndex(-1)
         self.combo_set.currentIndexChanged.connect(self.set_selected)
 
@@ -87,7 +87,6 @@ class segy_write_multiple(QtGui.QWidget):
     def deliverable_selected(self):
         if self.combo_deliverable.currentIndex() == -1:
             self.set_no = None
-            self.set_selected = False
             self.combo_set.clear()
             self.combo_set.setCurrentIndex(-1)
         else:
@@ -97,11 +96,16 @@ class segy_write_multiple(QtGui.QWidget):
             print "Deliverable is set to: " + deliverable
             self.combo_set.clear()
             self.combo_set.setCurrentIndex(-1)
-            self.set_selected = False
+            self.combo_set.blockSignals(True)
             self.combo_set.addItems(self.parent.tape_operation_manager.get_deliverable_set_list())
             self.combo_set.setCurrentIndex(-1)
+            self.combo_set.blockSignals(False)
             self.allowed_size = str(file_size_allowed_dict[self.parent.tape_operation_manager.deliverable.media])
             self.label_media_capacity.setText(self.allowed_size)
+            self.combo_line.add_dummy_widget()
+            self.combo_line.setStyleSheet('background-color: None')
+            self.selected_size.clear()
+            self.update()
 
     def sort_file_list(self,file_list,list_items):
         sort_list = []
@@ -124,6 +128,7 @@ class segy_write_multiple(QtGui.QWidget):
         if self.combo_set.currentIndex() == -1:
             pass
         else:
+            self.combo_line.setStyleSheet('background-color: None')
             set_no = str(self.combo_set.currentText())
             self.set_no = set_no
             print "Set no is set to: " + str(set_no)
@@ -135,7 +140,9 @@ class segy_write_multiple(QtGui.QWidget):
             print file_list_removed
             self.sort_file_list(file_list,'all')
             self.sort_file_list(file_list_removed,'removed')
-            self.combo_line.add_all_files_widget()
+            self.combo_line.toggle_file_selection()
+            self.selected_size.clear()
+            self.update()
 
 
     def reel_no_check(self,tape):
@@ -195,6 +202,7 @@ class segy_write_multiple(QtGui.QWidget):
 
 
 class file_selection(QtGui.QWidget):
+
     def __init__(self,parent):
         super(file_selection,self).__init__()
         self.parent = parent
@@ -217,26 +225,38 @@ class file_selection(QtGui.QWidget):
         self.show()
 
 
+    def add_dummy_widget(self):
+        self.working_widet = QtGui.QScrollArea()
+        self.grid.addWidget(self.working_widet,3,0)
+        self.update_routine()
+
     def add_all_files_widget(self):
         self.working_widget = all_files_widget(self.parent)
         self.grid.addWidget(self.working_widget, 3, 0)
+        self.working_widget.closed.connect(self.add_unwritten_files_widget)
+        self.update_routine()
+
+    def add_unwritten_files_widget(self):
+        self.working_widet = unwritten_files_widget(self.parent)
+        self.grid.addWidget(self.working_widet, 3, 0)
         self.working_widget.closed.connect(self.add_all_files_widget)
+        self.update_routine()
+
+    def update_routine(self):
+        self.setStyleSheet('background-color: None')
+        self.parent.selected_size.clear()
         self.grid.update()
         self.update()
+        self.parent.update()
 
 
     def toggle_file_selection(self):
         if self.ck_box_remove.isChecked() == True:
             self.grid.itemAtPosition(3,0).widget().deleteLater()
-            self.working_widet = unwritten_files_widget(self.parent)
-            self.grid.addWidget(self.working_widet,3,0)
-            self.working_widget.closed.connect(self.add_all_files_widget)
-            self.grid.update()
-            self.update()
+            self.add_unwritten_files_widget()
         else:
             self.grid.itemAtPosition(3, 0).widget().deleteLater()
             self.add_all_files_widget()
-
 
 
     def calculate_combined_file_size(self,return_list):
@@ -246,10 +266,9 @@ class file_selection(QtGui.QWidget):
 
     def ok_exit(self):
         return_list = []
-        self.btn_list = self.working_widget.btn_list
-        for a_btn in self.btn_list:
-            if a_btn.isChecked() == True:
-                return_list.append(str(a_btn.objectName()))
+        for i in range(len(self.btn_list)):
+            if self.btn_list[i].isChecked() is True:
+                return_list.append(str(self.btn_list[i].objectName()))
         if len(return_list) == 0:
             warning_message = "No file selected !!"
             self.warning_pop_up = pop_up_message_box(warning_message, 'Warning')
@@ -289,12 +308,12 @@ class all_files_widget(QtGui.QScrollArea):
         self.grid = QtGui.QGridLayout()
         self.widget  = QtGui.QWidget()
         i = 0
-        self.btn_list = []
+        self.parent.combo_line.btn_list = []
         for a_file in self.parent.file_list:
             btn = QtGui.QCheckBox(str(a_file + " : " + str(self.parent.file_size_dict[a_file])))
             btn.setObjectName(a_file)
             self.grid.addWidget(btn, i, 0)
-            self.btn_list.append(btn)
+            self.parent.combo_line.btn_list.append(btn)
             i = i + 1
         self.widget.setLayout(self.grid)
         self.setWidget(self.widget)
@@ -308,13 +327,13 @@ class unwritten_files_widget(QtGui.QScrollArea):
         self.parent = parent
         self.grid = QtGui.QGridLayout()
         i = 0
-        self.btn_list = []
+        self.parent.combo_line.btn_list = []
         self.widget = QtGui.QWidget()
         for a_file in self.parent.file_list_removed:
             btn = QtGui.QCheckBox(str(a_file + " : " + str(self.parent.file_size_dict[a_file])))
             btn.setObjectName(a_file)
             self.grid.addWidget(btn, i, 0)
-            self.btn_list.append(btn)
+            self.parent.combo_line.btn_list.append(btn)
             i = i + 1
         self.widget.setLayout(self.grid)
         self.setWidget(self.widget)

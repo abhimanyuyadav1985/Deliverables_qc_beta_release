@@ -29,7 +29,7 @@ class SEGD_QC_Form(QtGui.QWidget):
 
 
         self.pb_execute = QtGui.QPushButton('Run')
-        self.grid.addWidget(self.pb_execute,8,0)
+        self.grid.addWidget(self.pb_execute,9,0)
         self.pb_execute.clicked.connect(self.execute)
 
 
@@ -79,8 +79,12 @@ class SEGD_QC_Form(QtGui.QWidget):
         self.line_tape = QtGui.QLineEdit()
         self.grid.addWidget(self.line_tape,6,1)
 
-        self.chk_locked = QtGui.QCheckBox("Tape lock check")
+        self.chk_locked = QtGui.QCheckBox("Tape locked")
         self.grid.addWidget(self.chk_locked,7,1)
+
+
+        self.chk_label = QtGui.QCheckBox("Label checked")
+        self.grid.addWidget(self.chk_label,9,1)
 
 
         self.chk_noqc = QtGui.QCheckBox("Remove previoously checked")
@@ -114,12 +118,32 @@ class SEGD_QC_Form(QtGui.QWidget):
             self.combo_tape.setCurrentIndex(-1)
         else:
             set_no = str(self.combo_set.currentText())
+            self.parent.tape_operation_manager.set_working_set(set_no)
             print "Set no is set to: " + str(set_no)
             self.combo_line.clear()
-            self.line_list = self.parent.tape_operation_manager.service_class.get_list_of_available_segd_seq()
-            self.unchecked_line_list = self.parent.tape_operation_manager.service_class.get_list_of_unchecked_SEGD_seq_for_set(self.line_list)
+            line_list = self.parent.tape_operation_manager.service_class.get_list_of_available_segd_seq()
+            unchecked_line_list = self.parent.tape_operation_manager.service_class.get_list_of_unchecked_SEGD_seq_for_set(line_list)
+            self.sort_file_list(line_list, 'all')
+            self.sort_file_list(unchecked_line_list,'removed')
             self.toggle_line_list()
 
+
+    def sort_file_list(self,file_list,list_items):
+        sort_list = []
+        sort_dict = {}
+        for a_file in file_list:
+            linename = a_file
+            seq_no = int(linename[-3:])
+            sort_list.append(seq_no)
+            sort_dict.update({seq_no:a_file})
+        if list_items == 'all':
+            self.line_list = []
+            for a_seq in sorted(sort_list):
+                self.line_list.append(sort_dict[a_seq])
+        elif list_items == 'removed':
+            self.unchecked_line_list = []
+            for a_seq in sorted(sort_list):
+                self.unchecked_line_list.append(sort_dict[a_seq])
 
 
     def line_selected(self):
@@ -138,11 +162,13 @@ class SEGD_QC_Form(QtGui.QWidget):
 
     def toggle_line_list(self):
         if self.chk_noqc.isChecked() is True:
+            self.combo_line.blockSignals(True)
             self.combo_line.clear()
             self.combo_line.addItems(self.unchecked_line_list)
             self.combo_line.setCurrentIndex(-1)
             self.combo_line.blockSignals(False)
         else:
+            self.combo_line.blockSignals(True)
             self.combo_line.clear()
             self.combo_line.addItems(self.line_list)
             self.combo_line.setCurrentIndex(-1)
@@ -173,25 +199,28 @@ class SEGD_QC_Form(QtGui.QWidget):
 
         if combo_entry_check == True:
             if self.chk_locked.isChecked() is True:
-                dst = str(self.combo_tape_drive.currentText())
-                self.parent.tape_operation_manager.set_tape_drive(dst)
-                deliverable = str(self.combo_deliverable.currentText())
-                self.parent.tape_operation_manager.set_deliverable(deliverable)
-                line_name = str(self.combo_line.currentText())
-                self.parent.tape_operation_manager.set_seq_name(line_name)
-                self.parent.tape_operation_manager.service_class.set_SEGD_path(line_name)
-                set_no = str(self.combo_set.currentText())
-                self.parent.tape_operation_manager.set_working_set(set_no)
-                tape = str(self.combo_tape.currentText())
-                self.parent.tape_operation_manager.set_tape_name(tape)
-                self.parent.tape_operation_manager.service_class.set_logfile()
-                # Now perform tape manual vs auto check
-                if str(self.combo_tape.currentText()) == str(self.line_tape.text()):
-                    print " Ok to run"
-                    self.parent.tape_operation_manager.service_class.run()
-                    self.close()
+                if self.chk_label.isChecked() is True:
+                    dst = str(self.combo_tape_drive.currentText())
+                    self.parent.tape_operation_manager.set_tape_drive(dst)
+                    deliverable = str(self.combo_deliverable.currentText())
+                    self.parent.tape_operation_manager.set_deliverable(deliverable)
+                    line_name = str(self.combo_line.currentText())
+                    self.parent.tape_operation_manager.set_seq_name(line_name)
+                    self.parent.tape_operation_manager.service_class.set_SEGD_path(line_name)
+                    set_no = str(self.combo_set.currentText())
+                    self.parent.tape_operation_manager.set_working_set(set_no)
+                    tape = str(self.combo_tape.currentText())
+                    self.parent.tape_operation_manager.set_tape_name(tape)
+                    self.parent.tape_operation_manager.service_class.set_logfile()
+                    # Now perform tape manual vs auto check
+                    if str(self.combo_tape.currentText()) == str(self.line_tape.text()):
+                        print " Ok to run"
+                        self.parent.tape_operation_manager.service_class.run()
+                        self.close()
+                    else:
+                        print "Manual and Db entries for tape do not match"
                 else:
-                    print "Manual and Db entries for tape do not match"
+                    print "Please make sure that you have checked the label"
             else:
                 print "Please make sure that the SEGD tape is locked !!"
 

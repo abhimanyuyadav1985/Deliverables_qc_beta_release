@@ -1,6 +1,4 @@
-import sys
 from PyQt4 import QtGui,QtCore
-from general_functions.general_functions import create_central_labels
 from class_pop_up_message_box import pop_up_message_box
 from configuration import multiple_per_tape_list
 from configuration import file_size_allowed_dict

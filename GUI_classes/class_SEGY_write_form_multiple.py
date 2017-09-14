@@ -4,7 +4,7 @@ from general_functions.general_functions import create_central_labels
 from class_pop_up_message_box import pop_up_message_box
 from configuration import multiple_per_tape_list
 from configuration import file_size_allowed_dict
-from general_functions.general_functions import change_log_creation
+from general_functions.general_functions import change_log_creation, create_central_labels
 
 class segy_write_multiple(QtGui.QWidget):
     closed = QtCore.pyqtSignal()
@@ -24,8 +24,8 @@ class segy_write_multiple(QtGui.QWidget):
         self.grid.addWidget(create_central_labels('SEGY write Input'), 0, 0, 1, 3)
         self.grid.addWidget(create_central_labels('Select Drive'), 1, 0)
         self.grid.addWidget(create_central_labels('Select Deliverable'), 2, 0)
-        self.grid.addWidget(create_central_labels('Select File/s'), 3, 0)
-        self.grid.addWidget(create_central_labels('Select set'), 4, 0)
+        self.grid.addWidget(create_central_labels('Select File/s'), 4, 0)
+        self.grid.addWidget(create_central_labels('Select set'), 3, 0)
         self.grid.addWidget(create_central_labels('Tape label'), 5, 0)
         self.grid.addWidget(create_central_labels("Media capacity (Mib)"),6,0)
         self.grid.addWidget(create_central_labels("Total size selected (Mib)"),7,0)
@@ -46,7 +46,7 @@ class segy_write_multiple(QtGui.QWidget):
 
         self.combo_tape_drive = QtGui.QComboBox()
         self.combo_tape_drive.setObjectName("Tape Drive")
-        self.grid.addWidget(self.combo_tape_drive, 1, 1)
+        self.grid.addWidget(self.combo_tape_drive, 1, 1,1,2)
         self.combo_tape_drive.addItems(self.parent.tape_operation_manager.tape_service.available_dst)
         self.combo_tape_drive.setCurrentIndex(-1)
         self.combo_tape_drive.blockSignals(False)
@@ -54,7 +54,7 @@ class segy_write_multiple(QtGui.QWidget):
 
         self.combo_deliverable = QtGui.QComboBox()
         self.combo_deliverable.setObjectName("Deliverable")
-        self.grid.addWidget(self.combo_deliverable, 2, 1)
+        self.grid.addWidget(self.combo_deliverable, 2, 1,1,2)
         self.combo_deliverable.addItems(self.parent.tape_operation_manager.get_all_SEGY_tape_write_deliverable_list())
         self.combo_deliverable.setCurrentIndex(-1)
         self.combo_deliverable.blockSignals(False)
@@ -62,56 +62,80 @@ class segy_write_multiple(QtGui.QWidget):
 
         self.combo_line = file_selection(self)
         self.combo_line.setObjectName("File name")
-        self.combo_line.setFixedHeight(600)
-        self.grid.addWidget(self.combo_line, 3, 1)
+        self.combo_line.setFixedHeight(400)
+        self.grid.addWidget(self.combo_line, 4, 1, 1, 2)
 
 
         self.combo_set = QtGui.QComboBox()
         self.combo_set.setObjectName("Set no")
-        self.grid.addWidget(self.combo_set, 4, 1)
+        self.grid.addWidget(self.combo_set, 3, 1,1,2)
+
         self.combo_set.blockSignals(False)
+        self.combo_set.setCurrentIndex(-1)
         self.combo_set.currentIndexChanged.connect(self.set_selected)
 
         self.line_tape = QtGui.QLineEdit()
-        self.grid.addWidget(self.line_tape, 5, 1)
+        self.grid.addWidget(self.line_tape, 5, 1, 1, 2)
 
         self.setLayout(self.grid)
+
 
     def tape_drive_selected(self):
         dst = str(self.combo_tape_drive.currentText())
         print "Setting tape drive to: " + dst
 
     def deliverable_selected(self):
-        deliverable = str(self.combo_deliverable.currentText())
-        print "Deliverable is set to: " + deliverable
-        self.parent.tape_operation_manager.set_deliverable(deliverable)
-        (file_list,self.file_size_dict) = self.parent.tape_operation_manager.service_class.get_list_of_files_where_ondisk_qc_is_approved()
-        self.sort_file_list(file_list)
-        self.combo_line.refresh_checkbox_items()
-        self.combo_set.clear()
-        self.combo_set.addItems(self.parent.tape_operation_manager.get_deliverable_set_list())
-        self.combo_set.setCurrentIndex(-1)
-        self.allowed_size = str(file_size_allowed_dict[self.parent.tape_operation_manager.deliverable.media])
-        self.label_media_capacity.setText(self.allowed_size)
+        if self.combo_deliverable.currentIndex() == -1:
+            self.set_no = None
+            self.set_selected = False
+            self.combo_set.clear()
+            self.combo_set.setCurrentIndex(-1)
+        else:
+            deliverable = str(self.combo_deliverable.currentText())
+            self.parent.tape_operation_manager.set_deliverable(deliverable)
+            self.deliverable = deliverable
+            print "Deliverable is set to: " + deliverable
+            self.combo_set.clear()
+            self.combo_set.setCurrentIndex(-1)
+            self.set_selected = False
+            self.combo_set.addItems(self.parent.tape_operation_manager.get_deliverable_set_list())
+            self.combo_set.setCurrentIndex(-1)
+            self.allowed_size = str(file_size_allowed_dict[self.parent.tape_operation_manager.deliverable.media])
+            self.label_media_capacity.setText(self.allowed_size)
 
-    def sort_file_list(self,file_list):
+    def sort_file_list(self,file_list,list_items):
         sort_list = []
         sort_dict = {}
-        self.file_list = []
         for a_file in file_list:
             linename = a_file.split(".")[0]
             seq_no = int(linename[-3:])
             sort_list.append(seq_no)
             sort_dict.update({seq_no:a_file})
-        for a_seq in sorted(sort_list):
-            self.file_list.append(sort_dict[a_seq])
+        if list_items == 'all':
+            self.file_list = []
+            for a_seq in sorted(sort_list):
+                self.file_list.append(sort_dict[a_seq])
+        elif list_items == 'removed':
+            self.file_list_removed = []
+            for a_seq in sorted(sort_list):
+                self.file_list_removed.append(sort_dict[a_seq])
 
     def set_selected(self):
-        if int(self.combo_set.currentIndex()) == -1:
+        if self.combo_set.currentIndex() == -1:
             pass
         else:
             set_no = str(self.combo_set.currentText())
+            self.set_no = set_no
             print "Set no is set to: " + str(set_no)
+            self.set_selected = True
+            self.parent.tape_operation_manager.set_working_set(set_no)
+            (file_list,self.file_size_dict) = self.parent.tape_operation_manager.service_class.get_list_of_files_where_ondisk_qc_is_approved()
+            file_list_removed = self.parent.tape_operation_manager.service_class.remove_files_written_to_tape(file_list)
+            print file_list
+            print file_list_removed
+            self.sort_file_list(file_list,'all')
+            self.sort_file_list(file_list_removed,'removed')
+            self.combo_line.add_all_files_widget()
 
 
     def reel_no_check(self,tape):
@@ -168,42 +192,61 @@ class segy_write_multiple(QtGui.QWidget):
                     self.parent.SEGY_write_execute(tape, file_list)
                     self.close()
 
-class file_selection(QtGui.QScrollArea):
+
+
+class file_selection(QtGui.QWidget):
     def __init__(self,parent):
         super(file_selection,self).__init__()
         self.parent = parent
 
-
-    def refresh_checkbox_items(self):
-        self.parent.file_selected = False
-        self.widget = QtGui.QWidget()
         self.grid = QtGui.QGridLayout()
+
+        self.parent.file_selected = False
+
         self.pb_ok = QtGui.QPushButton('Confirm selection')
         self.pb_ok.clicked.connect(self.ok_exit)
         self.grid.addWidget(self.pb_ok, 0, 0)
-        i = 1
-        self.btn_list = []
-        for a_file in self.parent.file_list:
-            btn = QtGui.QCheckBox(str(a_file + " : " + str(self.parent.file_size_dict[a_file])))
-            btn.setObjectName(a_file)
-            self.grid.addWidget(btn, i, 0)
-            self.btn_list.append(btn)
-            i = i + 1
 
-        self.widget.setLayout(self.grid)
-        self.setWidget(self.widget)
-        self.parent.resize(self.parent.sizeHint())
-        self.setStyleSheet('background-color: None')
+        self.ck_box_remove = QtGui.QCheckBox('Remove files already written')
+        self.grid.addWidget(self.ck_box_remove, 1, 0)
+        self.ck_box_remove.stateChanged.connect(self.toggle_file_selection)
+
+        self.grid.addWidget(create_central_labels("Files"), 2, 0)
+
+        self.setLayout(self.grid)
         self.show()
+
+
+    def add_all_files_widget(self):
+        self.working_widget = all_files_widget(self.parent)
+        self.grid.addWidget(self.working_widget, 3, 0)
+        self.working_widget.closed.connect(self.add_all_files_widget)
+        self.grid.update()
+        self.update()
+
+
+    def toggle_file_selection(self):
+        if self.ck_box_remove.isChecked() == True:
+            self.grid.itemAtPosition(3,0).widget().deleteLater()
+            self.working_widet = unwritten_files_widget(self.parent)
+            self.grid.addWidget(self.working_widet,3,0)
+            self.working_widget.closed.connect(self.add_all_files_widget)
+            self.grid.update()
+            self.update()
+        else:
+            self.grid.itemAtPosition(3, 0).widget().deleteLater()
+            self.add_all_files_widget()
+
+
 
     def calculate_combined_file_size(self,return_list):
         self.file_size = 0
         for a_file in return_list:
             self.file_size = self.file_size + self.parent.file_size_dict[a_file]
 
-
     def ok_exit(self):
         return_list = []
+        self.btn_list = self.working_widget.btn_list
         for a_btn in self.btn_list:
             if a_btn.isChecked() == True:
                 return_list.append(str(a_btn.objectName()))
@@ -235,4 +278,44 @@ class file_selection(QtGui.QScrollArea):
             self.parent.selected_size.setText(str(self.file_size))
             self.parent.file_selected = True
             self.parent.segy_to_write_list = return_list
+
+
+
+class all_files_widget(QtGui.QScrollArea):
+    closed = QtCore.pyqtSignal()
+    def __init__(self,parent):
+        super(all_files_widget, self).__init__()
+        self.parent = parent
+        self.grid = QtGui.QGridLayout()
+        self.widget  = QtGui.QWidget()
+        i = 0
+        self.btn_list = []
+        for a_file in self.parent.file_list:
+            btn = QtGui.QCheckBox(str(a_file + " : " + str(self.parent.file_size_dict[a_file])))
+            btn.setObjectName(a_file)
+            self.grid.addWidget(btn, i, 0)
+            self.btn_list.append(btn)
+            i = i + 1
+        self.widget.setLayout(self.grid)
+        self.setWidget(self.widget)
+
+
+
+class unwritten_files_widget(QtGui.QScrollArea):
+    closed = QtCore.pyqtSignal()
+    def __init__(self,parent):
+        super(unwritten_files_widget, self).__init__()
+        self.parent = parent
+        self.grid = QtGui.QGridLayout()
+        i = 0
+        self.btn_list = []
+        self.widget = QtGui.QWidget()
+        for a_file in self.parent.file_list_removed:
+            btn = QtGui.QCheckBox(str(a_file + " : " + str(self.parent.file_size_dict[a_file])))
+            btn.setObjectName(a_file)
+            self.p_grid.addWidget(btn, i, 0)
+            self.btn_list.append(btn)
+            i = i + 1
+        self.widget.setLayout(self.grid)
+        self.setWidget(self.widget)
 

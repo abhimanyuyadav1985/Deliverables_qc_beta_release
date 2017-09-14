@@ -139,7 +139,7 @@ class Tape_drive_dashboard(QtGui.QWidget):
     def segy_write(self):
         self.SEGY_write_form = segy_write_multiple(self)
         self.SEGY_write_form.setMinimumWidth(400)
-        self.SEGY_write_form.setMinimumHeight(900)
+        self.SEGY_write_form.setMinimumHeight(700)
         self.SEGY_write_form.show()
 
 

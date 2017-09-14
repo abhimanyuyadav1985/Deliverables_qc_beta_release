@@ -1,8 +1,9 @@
 from configuration import *
 from dug_ops.DUG_ops import fetch_directory_content_list
-from database_engine.DB_ops import get_list_of_applicable_SEGD_tapes,get_min_max_ffid_tuple_for_tape
+from database_engine.DB_ops import get_list_of_applicable_SEGD_tapes,get_min_max_ffid_tuple_for_tape, get_all_segd_objects_for_set_checked_before
 import posixpath
 from dug_ops.DUG_ops import append_register_entry
+from database_engine.DB_ops import get_all_raw_seq_info_objects
 
 class SEGD_QC_service(object):
     def __init__(self,parent):
@@ -45,6 +46,25 @@ class SEGD_QC_service(object):
         cmd = str("ls " + dir_path)
         dir_list_for_combo = fetch_directory_content_list(self.parent.DUG_connection_obj,cmd)
         return dir_list_for_combo
+
+    def get_list_of_unchecked_SEGD_seq_for_set(self,all_seq_list):
+        raw_seq_info_dao_list = get_all_raw_seq_info_objects(self.parent.db_connection_obj)
+        seq_line_dict = {}
+        for a_dao in raw_seq_info_dao_list:
+            seq_line_dict.update({a_dao.seq : a_dao.real_line_name})
+        previous_check_line_list = []
+        previous_checked_list = get_all_segd_objects_for_set_checked_before(self.parent.db_connection_obj, self.parent.deliverable.id, self.parent.set_no)
+        for a_dao in previous_checked_list:
+            previous_check_line_list.append(seq_line_dict[a_dao.seq_id])
+        return_list = []
+        for a_line in all_seq_list:
+            if a_line in previous_check_line_list:
+                pass
+            else:
+                return_list.append(a_line)
+
+        return return_list
+
 
     def get_list_of_applicable_segd_tapes(self):
         tape_list = get_list_of_applicable_SEGD_tapes(self.parent.db_connection_obj,self.parent.seq_name)

@@ -354,5 +354,9 @@ def get_all_SEGY_qc_objects(obj, deliverable_id):
     obj_list = obj.sess.query(obj.SEGY_QC_on_disk).filter(obj.SEGY_QC_on_disk.deliverable_id == deliverable_id).all()
     return obj_list
 
+def get_all_segd_objects_for_set_checked_before(obj,deliverable_id, set_no):
+    obj_list = obj.sess.query(obj.SEGD_qc).filter(obj.SEGD_qc.deliverable_id == deliverable_id).filter(obj.SEGD_qc.set_no == set_no).filter(obj.SEGD_qc.qc_status == True).all()
+    return obj_list
+
 if __name__=="__main__":
     fetch_deliverables_list()

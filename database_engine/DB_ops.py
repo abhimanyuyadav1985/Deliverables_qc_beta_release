@@ -208,12 +208,15 @@ def get_segd_qc_path(obj,id,set_no):
 
 def get_list_of_applicable_SEGD_tapes(obj, seq_name):
     seq_from_raw_seq_info = obj.sess.query(obj.Raw_seq_info).filter(obj.Raw_seq_info.real_line_name == seq_name).first()
-    seq_id = seq_from_raw_seq_info.seq
-    tapes = obj.sess.query(obj.SEGD_tapes).filter(obj.SEGD_tapes.sequence_number == seq_id).all()
-    tape_list = []
-    for obj in tapes:
-        tape_list.append(obj.name)
-    return tape_list
+    if seq_from_raw_seq_info == None:
+        return []
+    else:
+        seq_id = seq_from_raw_seq_info.seq
+        tapes = obj.sess.query(obj.SEGD_tapes).filter(obj.SEGD_tapes.sequence_number == seq_id).all()
+        tape_list = []
+        for obj in tapes:
+            tape_list.append(obj.name)
+        return tape_list
 
 def get_min_max_ffid_tuple_for_tape(obj,tape_name):
     entry = obj.sess.query(obj.SEGD_tapes).filter(obj.SEGD_tapes.name == tape_name).first()
@@ -355,6 +358,10 @@ def get_all_SEGY_qc_objects(obj, deliverable_id):
 
 def get_all_segd_objects_for_set_checked_before(obj,deliverable_id, set_no):
     obj_list = obj.sess.query(obj.SEGD_qc).filter(obj.SEGD_qc.deliverable_id == deliverable_id).filter(obj.SEGD_qc.set_no == set_no).filter(obj.SEGD_qc.qc_status == True).all()
+    return obj_list
+
+def get_all_raw_seq_info_objects(obj):
+    obj_list = obj.sess.query(obj.Raw_seq_info).all()
     return obj_list
 
 if __name__=="__main__":

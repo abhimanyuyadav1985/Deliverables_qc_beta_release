@@ -313,7 +313,7 @@ class unwritten_files_widget(QtGui.QScrollArea):
         for a_file in self.parent.file_list_removed:
             btn = QtGui.QCheckBox(str(a_file + " : " + str(self.parent.file_size_dict[a_file])))
             btn.setObjectName(a_file)
-            self.p_grid.addWidget(btn, i, 0)
+            self.grid.addWidget(btn, i, 0)
             self.btn_list.append(btn)
             i = i + 1
         self.widget.setLayout(self.grid)

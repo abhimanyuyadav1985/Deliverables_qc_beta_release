@@ -7,9 +7,6 @@ from dug_ops.DUG_ops import return_encoded_log
 from class_pop_up_text_box import pop_up_text_box_view_only
 from configuration.Tool_tips import tool_tips_mapper_dict
 
-
-
-
 class refresh_enabled_SEGD_QC_summary(QtGui.QWidget):
     def __init__(self,parent):
         super(refresh_enabled_SEGD_QC_summary,self).__init__()

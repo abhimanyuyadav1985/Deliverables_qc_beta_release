@@ -40,11 +40,12 @@ class Tape_drive_dashboard(QtGui.QWidget):
 
         self.pb_rewind = QtGui.QPushButton("Rewind")
         self.pb_rewind.setToolTip(self.tool_tip_dict['rewind'])
-        self.pb_rewind.clicked.connect(self.rewind_dst)
+        self.pb_rewind.clicked.connect(lambda: self.choose_tape_drive('rewind'))
+
 
         self.pb_eject = QtGui.QPushButton("Eject")
         self.pb_eject.setToolTip(self.tool_tip_dict['eject'])
-        self.pb_eject.clicked.connect(self.eject_dst)
+        self.pb_eject.clicked.connect(lambda : self.choose_tape_drive('eject'))
 
         self.pb_segd_qc = QtGui.QPushButton("SEGD QC")
         self.pb_segd_qc.setToolTip(self.tool_tip_dict['segd_qc'])
@@ -104,22 +105,14 @@ class Tape_drive_dashboard(QtGui.QWidget):
         print "Refresh complete.. "
 
 
-    def rewind_dst(self):
-        status = self.tape_operation_manager.get_verified_tape_drive(self)
-        if status is True:
-            dev_to_use = str(self.tape_operation_manager.tape_drive)
-            self.tape_operation_manager.tape_service.run_cmd(
-                self.tape_operation_manager.tape_service.dst_rewind_command_dict[
-                    self.tape_operation_manager.tape_drive], dev_to_use)
+    def rewind_dst(self,dev_to_use):
+        self.tape_service.run_cmd(
+                 self.tape_service.dst_rewind_command_dict[dev_to_use], dev_to_use)
 
 
-    def eject_dst(self):
-        status = self.tape_operation_manager.get_verified_tape_drive(self)
-        if status is True:
-            dev_to_use = str(self.tape_operation_manager.tape_drive)
-            self.tape_operation_manager.tape_service.run_cmd(
-                self.tape_operation_manager.tape_service.dst_eject_command_dict[
-                    self.tape_operation_manager.tape_drive],dev_to_use)
+    def eject_dst(self,dev_to_use):
+        self.tape_service.run_cmd(
+                self.tape_service.dst_eject_command_dict[dev_to_use],dev_to_use)
 
     def choose_tape_drive(self, ops):
         combo_list = self.tape_operation_manager.tape_service.available_dst
@@ -135,7 +128,6 @@ class Tape_drive_dashboard(QtGui.QWidget):
         self.SEGD_QC_form.show()
 
 
-
     def segy_write(self):
         self.SEGY_write_form = segy_write_multiple(self)
         self.SEGY_write_form.setMinimumWidth(400)
@@ -148,6 +140,14 @@ class Tape_drive_dashboard(QtGui.QWidget):
         self.tape_operation_manager.set_tape_name(reel_no)
         self.tape_operation_manager.service_class.set_logpath()
         self.tape_operation_manager.service_class.chk_and_run()
+
+
+    def set_attribute(self,dst,caller,ops):
+        print dst, caller, ops
+        if ops == 'rewind':
+            self.rewind_dst(dst)
+        elif ops == 'eject':
+            self.eject_dst(dst)
 
 
     def no_use(self):

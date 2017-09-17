@@ -7,7 +7,7 @@ import os
 
 #-----------------------------
 
-class right_widget(QtGui.QWidget):
+class right_widget(QtGui.QScrollArea):
 
     config_status_signal = QtCore.pyqtSignal(bool)
 

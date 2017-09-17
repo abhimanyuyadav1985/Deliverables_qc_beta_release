@@ -9,7 +9,7 @@ from configuration import SEGY_tape_log_template_dict,Report_dir
 import datetime, os
 from configuration.Tool_tips import tool_tips_mapper_dict
 
-class SEGY_Tool_Window(QtGui.QWidget):
+class SEGY_Tool_Window(QtGui.QScrollArea):
 
     closed = QtCore.pyqtSignal()
 

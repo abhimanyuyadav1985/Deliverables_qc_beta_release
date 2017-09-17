@@ -1,7 +1,7 @@
 from PyQt4 import QtGui, QtCore
 from general_functions.general_functions import create_central_labels
 
-class threads_dock(QtGui.QWidget):
+class threads_dock(QtGui.QScrollArea):
     def __init__(self, parent):
         # define the top window
         self.parent = parent

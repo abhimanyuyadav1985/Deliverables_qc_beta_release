@@ -42,7 +42,7 @@ import posixpath
 #-----------------------------
 
 import logging
-
+logger = logging.getLogger(__name__)
 ####################################################################################################################################
 ###Main window
 ####################################################################################################################################
@@ -59,7 +59,7 @@ class Top_Window(QtGui.QMainWindow):
     closed = QtCore.pyqtSignal()
     config_status_signal = QtCore.pyqtSignal(bool)
 
-    def __init__(self,log_file_path):
+    def __init__(self):
 
         """
         Initialization protocol =>
@@ -71,7 +71,6 @@ class Top_Window(QtGui.QMainWindow):
         super(Top_Window, self).__init__()
         # Create the logging services 1st so that all the executions can be logged
 
-        self.add_logger(log_path=log_file_path)
 
         self.tape_dashboard_visible = False
         self.layout = QtGui.QGridLayout()
@@ -103,22 +102,6 @@ class Top_Window(QtGui.QMainWindow):
     # Functions for Top window GUI
 #------------------------------------------------------------------------------+
 
-    def add_logger(self,log_path):
-        """
-        Start application loggin service using the path specified
-        :param log_path: path to the log file for current execution
-        :return: None
-        """
-
-        self.logging = logging
-        self.logging.basicConfig(level=logging.DEBUG,
-                                 format='%(asctime)s %(levelname)-8s %(message)s',
-                                 datefmt='%a, %d %b %Y %H:%M:%S',
-                                 filename=log_path,
-                                 file_mode='w')
-        self.logging.info('Logging services setup done ....')
-
-
 
     def add_threads(self):
 
@@ -136,7 +119,7 @@ class Top_Window(QtGui.QMainWindow):
 
         self.thread_dict = {'excel':['thread1' , self.thread1], 'dug' : ['thread2' ,self.thread2], 'db' : ['thread3', self.thread3], 'general':['thread4', self.thread4]}
 
-        self.logging.info('Application Threads creaed')
+        logger.info('Application Threads creaed')
 
 
     def set_window_title_and_icon(self):
@@ -151,7 +134,7 @@ class Top_Window(QtGui.QMainWindow):
         self.setWindowTitle(title)
         self.setWindowIcon(QtGui.QIcon(os.path.join(os.getcwd(),media_path,'polarcus.png')))# change this in the future
 
-        self.logging.info("Application Title and Polarcus Logo set")
+        logger.info("Application Title and Polarcus Logo set")
 
     def set_default_use_env(self):
         """
@@ -163,8 +146,8 @@ class Top_Window(QtGui.QMainWindow):
         self.default_use_mode = default_use_mode
         self.default_use_env = default_use_env
 
-        self.logging.info("Default use mode: " + str(default_use_mode))
-        self.logging.info("Default use environment: " + default_use_env )
+        logger.info("Default use mode: " + str(default_use_mode))
+        logger.info("Default use environment: " + default_use_env )
 
 
     def set_dummy_central_widget(self):
@@ -180,7 +163,7 @@ class Top_Window(QtGui.QMainWindow):
         self.working_widget = plcs_logo
         self.layout.addWidget(self.working_widget, 1, 1)
 
-        self.logging.info("Dummy central widget set")
+        logger.info("Dummy central widget set")
 
     def set_logo_and_title(self):
         """
@@ -215,7 +198,7 @@ class Top_Window(QtGui.QMainWindow):
         thread_dock_title.setFont(QtGui.QFont('SansSerif', 15))
         self.layout.addWidget(thread_dock_title, 0, 3)
 
-        self.logging.info("Application layout title elements set")
+        logger.info("Application layout title elements set")
 
     def add_left_dock(self):
         """
@@ -229,7 +212,7 @@ class Top_Window(QtGui.QMainWindow):
         self.cw.setFixedWidth(150)
         self.layout.addWidget(self.cw,1,0)
 
-        self.logging.info("Left dock set")
+        logger.info("Left dock set")
 
     def add_config_message(self):
         #Configuration message
@@ -252,14 +235,14 @@ class Top_Window(QtGui.QMainWindow):
         self.sts_inf.setFixedWidth(130)
         self.layout.addWidget(self.sts_inf,1,2)
 
-        self.logging.info("Configuration display dock set ")
+        logger.info("Configuration display dock set ")
 
     def add_thread_dock(self):
         self.thread_dock = threads_dock(self)
         self.thread_dock.setFixedWidth(220)
         self.layout.addWidget(self.thread_dock, 1, 3)
 
-        self.logging.info("Threads dock set")
+        logger.info("Threads dock set")
 
     def add_run_log(self):
         self.run_log = QtGui.QTextEdit()
@@ -287,17 +270,17 @@ class Top_Window(QtGui.QMainWindow):
     def check_existing_config(self):
         config_window = configuration_window(self)
         if os.path.exists(os.path.join(os.getcwd(), conn_config_file)):
-            self.logging.info("Found an existing configuration now checking its validitiy!!")
+            logger.info("Found an existing configuration now checking its validitiy!!")
             config_window.load_path.setText(os.path.join(os.getcwd(), conn_config_file))
             config_window.load_list()
             if config_window.save_status == 11:
                 #self.cw.btn3.setStyleSheet("background-color : green")
-                self.logging.info(" Found a valid configuration, the applicaiton will use it. If you need to change use the configuration button....")
+                logger.info(" Found a valid configuration, the applicaiton will use it. If you need to change use the configuration button....")
                 self.config_check = True
-                self.logging.info('config_check set to : True')
+                logger.info('config_check set to : True')
                 self.verified_start_up_protocol()
         else:
-            self.logging.warn("Either the config setting are incorrect ot the Tunnel to DB does not exist ... check")
+            logger.warn("Either the config setting are incorrect ot the Tunnel to DB does not exist ... check")
 
     def set_use_env(self): # set the use environment from the config object
         file_handler = open(os.path.join(os.getcwd(), conn_config_file), 'rb')
@@ -305,71 +288,73 @@ class Top_Window(QtGui.QMainWindow):
         file_handler.close()
         self.default_use_env = config_obj.use_env
         self.use_location = self.default_use_env
-        self.logging.info("Use location set to: " + self.use_location)
+        logger.info("Use location set to: " + self.use_location)
 
     def set_config_window(self):
         self.layout.itemAtPosition(1,1).widget().deleteLater()
         self.working_widget = configuration_window(self)
         self.layout.addWidget(self.working_widget,1,1)
-        self.layout.update()
-        self.working_widget.resize(self.working_widget.minimumSizeHint())
+
+        #self.working_widget.resize(self.working_widget.minimumSizeHint())
+        self.working_widget.setMaximumHeight(500)
         self.resize(self.minimumSizeHint())
+        self.layout.update()
         self.working_widget.closed.connect(self.show_project_info)
 
     def setup_DB_service(self):
-        self.logging.info("Now setting up the DB connection object.....")
+        logger.info("Now setting up the DB connection object.....")
         self.db_connection_obj = db_connection_obj()
         print "DB connection object setup complete"
-        self.logging.info("DB connection object setup complete")
+        logger.info("DB connection object setup complete")
         self.show_project_info()
 
     def setup_DUG_clients(self):
         print "Now setting up the DUG connection objects .."
-        self.logging.info("Now setting up the DUG connection objects ..")
+        logger.info("Now setting up the DUG connection objects ..")
         self.DUG_connection_obj = DUG_connection_object(self.default_use_env)
         print "DUG connection object setup complete"
-        self.logging.info("DUG connection object setup complete")
+        logger.info("DUG connection object setup complete")
 
     def setup_Tape_operation_manager(self):
         print "Now setting up the Tape operation manager......"
-        self.logging.info("Now setting up the Tape operation manager......")
+        logger.info("Now setting up the Tape operation manager......")
         self.tape_operation_manager = Tape_operation_manager(self)
         print "Done ........"
-        self.logging.info("Tape operation manager setup complete")
+        logger.info("Tape operation manager setup complete")
 
     def run_startup_sync_service(self):
         print "Now Executing startup sync......"
-        self.logging.info("Now executing startup sync services")
+        logger.info("Now executing startup sync services")
         self.sync_service.sync_all()
         print "Done ........"
-        self.logging.info("Startup sync services finished")
+        logger.info("Startup sync services finished")
 
     def setup_sync_service(self):
         print "Now setting up the Sync services......"
-        self.logging.info("Now setting up the Sync services......")
+        logger.info("Now setting up the Sync services......")
         self.sync_service = Synchronization_service(self)
         print "Done ........"
-        self.logging.info("All sync services setup complete")
+        logger.info("All sync services setup complete")
 
     def sftp_transfer_necessary_files(self):
-        self.logging.info("Now transferring the necessary files to the DUG system ")
+        logger.info("Now transferring the necessary files to the DUG system ")
         transfer_base_64_encoder(self.DUG_connection_obj)
         transfer_SEGD_QC_parser_script(self.DUG_connection_obj)
         transfer_SEGY_check_script(self.DUG_connection_obj)
         transfer_run_daemons(self.DUG_connection_obj)
         transfer_run_log_fetcher(self.DUG_connection_obj)
-        self.logging.info("File transfer to DUG system complete")
+        logger.info("File transfer to DUG system complete")
 
     def create_large_files_project_dir(self):
-        self.logging.info("Now checking if the SEGY file dir for project exists in ../large_files")
+        logger.info("Now checking if the SEGY file dir for project exists in ../large_files")
         large_files_root_path = large_file_root_dict[self.use_location]
         project_name = get_project_name(self.db_connection_obj)
         self.large_file_dir_proj_path = posixpath.join(large_files_root_path,project_name)
         status = check_generic_path(self.DUG_connection_obj,self.large_file_dir_proj_path)
         if status == 'True':
-            self.logging.info(self.large_file_dir_proj_path + " :The directory already exists..")
+            logger.info(self.large_file_dir_proj_path + " :The directory already exists..")
         else:
-            self.logging.info("Now creating ::" + self.large_file_dir_proj_path)
+            logger.info("Now creating ::" + self.large_file_dir_proj_path)
             create_generic_directory(self.DUG_connection_obj, self.large_file_dir_proj_path)
         self.DUG_connection_obj.large_files_dir = self.large_file_dir_proj_path
 
@@ -381,7 +366,7 @@ class Top_Window(QtGui.QMainWindow):
         self.run_sync_service = run_information_sync(dug_proj_path=dug_proj_path, thread_name=run_sync_thread_name)
         self.run_sync_service.moveToThread(self.run_sync_thread_to_use)
         self.run_sync_thread_to_use.started.connect(self.run_sync_service.run_and_flush)
-        self.logging.info(str("Starting Task execution sync service: " + run_sync_thread_name))
+        logger.info(str("Starting Task execution sync service: " + run_sync_thread_name))
         self.run_sync_service.doingWork.connect(self.thread_dock.thread_control)
         self.run_sync_service.cmdcontrol.connect(self.run_sync_command)
         self.run_sync_service.update_tape_dashboard.connect(self.update_command_on_tape_dashboard)
@@ -389,7 +374,7 @@ class Top_Window(QtGui.QMainWindow):
 
 
     def run_sync_command(self, cmd):
-        self.logging.info("Now executing : " + cmd)
+        logger.info("Now executing : " + cmd)
         self.DUG_connection_obj.ts_client.exec_command(str(cmd))
 
 
@@ -440,10 +425,11 @@ class Top_Window(QtGui.QMainWindow):
             self.layout.itemAtPosition(1, 1).widget().deleteLater()
             self.working_widget = project_info(self)
             self.layout.addWidget(self.working_widget, 1, 1)
-            self.layout.update()
-            self.working_widget.resize(self.working_widget.minimumSizeHint())
+            #self.working_widget.resize(self.working_widget.minimumSizeHint())
             self.resize(self.minimumSizeHint())
+            self.working_widget.setMaximumHeight(500)
             self.working_widget.closed.connect(self.show_project_info)
+            self.layout.update()
         else:
             print "No valid configuration in use ..."
             self.run_log.append("No valid configuration in use ...")
@@ -488,6 +474,7 @@ class Top_Window(QtGui.QMainWindow):
             self.layout.addWidget(self.working_widget, 1, 1)
             self.layout.update()
             self.working_widget.resize(self.working_widget.minimumSizeHint())
+            self.working_widget.setMinimumHeight(600)
             self.resize(self.minimumSizeHint())
             self.working_widget.closed.connect(self.show_project_info)
 

@@ -4,7 +4,7 @@ from database_engine.DB_ops import fetch_deliverables_list,delete_deliverable_ob
 from general_functions.general_functions import change_log_creation
 from configuration.Tool_tips import tool_tips_mapper_dict
 
-class Deliverables_summary_window(QtGui.QWidget):
+class Deliverables_summary_window(QtGui.QScrollArea):
     closed = QtCore.pyqtSignal()
 
     def __init__(self, parent):
@@ -17,7 +17,9 @@ class Deliverables_summary_window(QtGui.QWidget):
         self.db_connection_obj = self.parent.db_connection_obj # use this line to pass the connection object between the parent and the child
         grid = QtGui.QGridLayout()
         #header
-        grid.addWidget(create_central_labels('Deliverables sumary'),0,0,1,6)
+        title = create_central_labels('Deliverables sumary')
+        title.setMaximumHeight(50)
+        grid.addWidget(title,0,0,1,6)
 
         #---------------------------------------------
         #  **creating the label for the widget table

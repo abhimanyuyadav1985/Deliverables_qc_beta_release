@@ -51,7 +51,7 @@ class save_project_configuration(): # This is used to create the object for the 
 
         #print "Pickle object initialization finished, now saving to file......."
 
-class configuration_window(QtGui.QWidget): #The class object to create the configutation window GUI
+class configuration_window(QtGui.QScrollArea): #The class object to create the configutation window GUI
 
     closed = QtCore.pyqtSignal()
 
@@ -174,8 +174,9 @@ class configuration_window(QtGui.QWidget): #The class object to create the confi
 
 
         # adding items to the grid
-
-        grid.addWidget(create_central_labels("Configuration setup"),0,0,1,3)
+        title = create_central_labels("Configuration setup")
+        title.setFixedHeight(20)
+        grid.addWidget(title,0,0,1,3)
         grid.addWidget(title_host_IP,2,0)
         grid.addWidget(title_host_user,3,0)
         grid.addWidget(title_host_pword,4,0)

@@ -12,7 +12,7 @@ from configuration import Report_dir
 from configuration.Tool_tips import tool_tips_mapper_dict
 
 #-----------------------------
-class SEGD_tool_window(QtGui.QWidget):
+class SEGD_tool_window(QtGui.QScrollArea):
 
     closed = QtCore.pyqtSignal()
 

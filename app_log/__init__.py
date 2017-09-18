@@ -19,18 +19,22 @@ def get_log_level():
         'CRITICAL' : logging.CRITICAL
     }
     log_level = log_level_dict['INFO']
-    file_path = os.path.join(os.getcwd(),'manual_overrides','logging_level')
-    file_handler = open(file_path, 'rb')
-    for a_line in file_handler.readlines():
-        if '#' in a_line:
-            pass
-        elif 'logging_level' in a_line:
-            try:
-                log_level = log_level_dict[a_line.split('=')[1].rstrip(' ')]
-            except:
+    try:
+        file_path = os.path.join(os.getcwd(),'manual_overrides','logging_level')
+        file_handler = open(file_path, 'rb')
+        for a_line in file_handler.readlines():
+            if '#' in a_line:
                 pass
+            elif 'logging_level' in a_line:
+                try:
+                    log_level = log_level_dict[a_line.split('=')[1].rstrip(' ')]
+                except:
+                    pass
 
-    return log_level
+        return log_level
+    except:
+        return log_level
+
 
 def setup_logging():
     log_level = get_log_level()

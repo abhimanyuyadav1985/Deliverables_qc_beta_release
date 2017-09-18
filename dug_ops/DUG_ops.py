@@ -7,6 +7,16 @@ import socket
 import time
 import uuid
 
+from app_log import stream_formatter
+
+import logging
+logger = logging.getLogger(__name__)
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+formatter = logging.Formatter(stream_formatter)
+console.setFormatter(formatter)
+logger.addHandler(console)
+
 
 file_path = os.path.join(os.getcwd(), conn_config_file)
 
@@ -21,18 +31,18 @@ def main():
 #     print "done.."
 
 def transfer_run_log_fetcher(DUG_connection_obj):
-    print "Now transferring the run log fetcher",
+    logger.info("Now transferring the run log fetcher")
     file_path_2 = '/d/home/share/bin/run_log_fetcher.py'
     local_path_2 = os.path.join(os.getcwd(), "dug_ops", 'run_log_fetcher.py')
     DUG_connection_obj.sftp_client.put(local_path_2, file_path_2)
-    print "done.."
+    logger.info("done..")
 
 def transfer_directory_checking_script(sftp_client):
     file_path_2 = '/d/home/share/bin/directory_checking_script.py'
     local_path_2 = os.path.join(os.getcwd(), "dug_ops", 'directory_checking_script.py')
-    print "Transferring the directory checking script .... ",
+    logger.info("Transferring the directory checking script .... ")
     sftp_client.put(local_path_2, file_path_2)
-    print "done.."
+    logger.info("done..")
 
 def check_generic_path(DUG_connection_obj,path_to_check):
     cmd = "python " + '/d/home/share/bin/directory_checking_script.py ' + path_to_check
@@ -45,24 +55,24 @@ def check_generic_path(DUG_connection_obj,path_to_check):
 def transfer_SEGD_QC_parser_script(DUG_connection_obj):
     path_to_check = '/d/home/share/bin/SEGD_QC_parser.py'
     status = check_generic_path(DUG_connection_obj, path_to_check)
-    print status
+    logger.info(status)
     #if status == "False":
     file_path_2 = '/d/home/share/bin/SEGD_QC_parser.py'
     local_path_2 = os.path.join(os.getcwd(), "dug_ops", 'SEGD_QC_parser.py')
-    print "Transferring the SEGD tape QC parsing script .... ",
+    logger.info("Transferring the SEGD tape QC parsing script .... ")
     DUG_connection_obj.sftp_client.put(local_path_2, file_path_2)
-    print "done.."
+    logger.info("done..")
 
 def transfer_base_64_encoder(DUG_connection_obj):
     path_to_check = '/d/home/share/bin/base_64_encoder.py'
     status = check_generic_path(DUG_connection_obj, path_to_check)
-    print status
+    logger.info(status)
     #if status == "False":
     file_path_2 = '/d/home/share/bin/base_64_encoder.py'
     local_path_2 = os.path.join(os.getcwd(), "dug_ops", 'base_64_encoder.py')
-    print "Transferring the base 64 encoder script .... ",
+    logger.info("Transferring the base 64 encoder script .... ")
     DUG_connection_obj.sftp_client.put(local_path_2, file_path_2)
-    print "done.."
+    logger.info("done..")
 
 def transfer_SEGY_check_script(DUG_connection_obj):
     dug_path = str(DUG_connection_obj.DUG_proj_path)
@@ -70,19 +80,19 @@ def transfer_SEGY_check_script(DUG_connection_obj):
     path_to_check = dug_path + '/segy-hdr-chk-mp.tar.gz'
 
     status = check_generic_path(DUG_connection_obj,path_to_check)
-    print status
+    logger.info(status)
     if status == "False":
         file_path_2 = dug_path + '/segy-hdr-chk-mp.tar.gz'
         local_path_2 = os.path.join(os.getcwd(), "dug_ops", 'segy-hdr-chk-mp.tar.gz')
-        print "Transferring the SEGY checking scripts..... ",
+        logger.info("Transferring the SEGY checking scripts..... ")
         DUG_connection_obj.sftp_client.put(local_path_2, file_path_2)
-        print "done.."
-    print "Checking if it has been decompressed before and softlink created..",
+        logger.info("done..")
+    logger.info("Checking if it has been decompressed before and softlink created..")
     path_to_check = '/d/home/share/bin/' + project_name + "_segy-hcm"
     status = check_generic_path(DUG_connection_obj,path_to_check)
-    print status
+    logger.info(status)
     if status == "False":
-        print "Now decompressing the tarball and creating the softlink..",
+        logger.info("Now decompressing the tarball and creating the softlink..")
         decompress_and_softlink_creation(DUG_connection_obj,path_to_check)
 
 def transfer_run_daemons(DUG_connection_obj):
@@ -96,49 +106,49 @@ def create_register_paths(DUG_connection_obj):
     for a_path in path_list:
         status = check_generic_path(DUG_connection_obj,a_path)
         if status =='False':
-            print "Creating : " + a_path
+            logger.info("Creating : " + a_path)
             create_generic_directory(DUG_connection_obj,a_path)
         else:
-            print 'Found : ' + a_path
+            logger.info('Found : ' + a_path)
 
 
 def transfer_task_execution_daemon(DUG_connection_obj):
     dug_path = str(DUG_connection_obj.DUG_proj_path)
     path_to_check = posixpath.join(dug_path,'register','deliverables_qc_task_execution_daemon.py')
     status = check_generic_path(DUG_connection_obj, path_to_check)
-    print status
+    logger.info(status)
     if status == "False":
         file_path = path_to_check
         local_path = os.path.join(os.getcwd(),'dug_ops','deliverables_qc_task_execution_daemon.py')
-        print "Transferring the Deliverablaes QC task execution Daemon..... ",
+        logger.info("Transferring the Deliverablaes QC task execution Daemon..... ")
         DUG_connection_obj.sftp_client.put(local_path, file_path)
-        print "done.."
+        logger.info("done..")
     else:
-        print "Task execution daemaon already exits ..... "
+        logger.info("Task execution daemaon already exits ..... ")
 
 def transfer_task_database(DUG_connection_obj):
     dug_path = str(DUG_connection_obj.DUG_proj_path)
     path_to_check = posixpath.join(dug_path, 'register', 'task_database.sqlite3')
     status = check_generic_path(DUG_connection_obj, path_to_check)
-    print status
+    logger.info(status)
     if status == "False":
         file_path = path_to_check
         local_path = os.path.join(os.getcwd(), 'dug_ops', 'task_database.sqlite3')
-        print "Transferring the Blank task database.... ",
+        logger.info("Transferring the Blank task database.... ")
         DUG_connection_obj.sftp_client.put(local_path, file_path)
-        print "done.."
+        logger.info("done..")
     else:
-        print "Task database already exists..... "
+        logger.info("Task database already exists..... ")
 
 
 def decompress_and_softlink_creation(DUG_connection_obj,path_to_check):
     DUG_segy_path = str(DUG_connection_obj.DUG_proj_path)
     cmd = "tar -xf " + DUG_segy_path + "/segy-hdr-chk-mp.tar.gz -C " + DUG_segy_path + "/"
     DUG_connection_obj.ws_client.exec_command(cmd)
-    print "decompression done..",
+    logger.info("decompression done..")
     cmd = "ln -s " + DUG_segy_path + '/segy-hdr-chk-mp/segy-hdr-chk-mp ' + path_to_check
     DUG_connection_obj.ws_client.exec_command(cmd)
-    print "softlink created .."
+    logger.info("softlink created ..")
 
 
 def create_generic_directory(DUG_connection_obj,path_to_create):
@@ -159,12 +169,12 @@ def run_command_on_tape_server(DUG_connection_obj,cmd,dev_to_use):
     else:
         busy_dev_list = []
     if dev_to_use in busy_dev_list:
-        print "Aborting Busy: " + dev_to_use
+        logger.info("Aborting Busy: " + dev_to_use)
         return None
     else:
-        print "Executing : " + cmd
+        logger.info("Executing : " + cmd)
         stdin, stdout, stderr = DUG_connection_obj.ts_client.exec_command(cmd)
-        print "done .. "
+        logger.info("done .. ")
         return stdout
 
 def run_command_on_ws_client(DUG_connection_obj,cmd):
@@ -197,7 +207,7 @@ def get_SEGD_QC_run_finish_status(DUG_conenction_obj, path):
     std_out = []
     for line in stdout.readlines():
         std_out.append(line)
-    print std_out[0]
+    logger.info(std_out[0])
     if int(std_out[0][0]) == 1:
         return True
     else:
@@ -244,7 +254,7 @@ def append_register_entry(DUG_connection_obj, register_obj):
     dug_path = DUG_connection_obj.DUG_proj_path
     remote_path = posixpath.join(dug_path, 'register','from_app', file_name)
     DUG_connection_obj.sftp_client.put(local_path, remote_path)
-    print "sucessfully transferred: " + local_path
+    logger.info("sucessfully transferred: " + local_path)
 
 
 if __name__ == '__main__':

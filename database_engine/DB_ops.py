@@ -5,23 +5,33 @@ from configuration import *
 from unipath import Path
 import sys
 from sqlalchemy import or_,and_
+
+import logging
+from app_log import  stream_formatter
+logger = logging.getLogger(__name__)
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+formatter = logging.Formatter(stream_formatter)
+console.setFormatter(formatter)
+logger.addHandler(console)
+
 #------------------------------------------------------------------------------------------------------------
 #Function to check the connection to the desired database_engine in from configuration setup
 #------------------------------------------------------------------------------------------------------------
 def test_DB_connection(curr):
-    print "Testing the DB connection now ......"
+    logger.info("Testing the DB connection now ......")
     try:
         curr.execute("SELECT VERSION()")
         results = curr.fetchone()
         ver = results[0]
         if (ver is None):
-            print "Please check the details once again as we cannot find Postgres vversion "
+            logger.warning("Please check the details once again as we cannot find Postgres vversion ")
             return False
         else:
-            print ver
+            logger.info("Postgres version: " + ver)
             return
-    except:
-        print "ERROR IN CONNECTION, please try again"
+    except Exception as error:
+        logger.error(error)
         return False
 
 def test_db_connection_for_config(obj):
@@ -38,15 +48,16 @@ def test_db_connection_for_config(obj):
         curr = conn.cursor()
         test_DB_connection(curr)
         curr.close()
-        print "Connection to database_engine successful !!!!!!!!!!!!!!!"
-    except:
-        print "Unable to connect to the Server, Does the tunnel from database server to local port 1111 exist ????"
-        print "Exiting application now"
+        logger.info("Connection to database_engine successful !!!!!!!!!!!!!!!")
+    except Exception as error:
+        logger.error("Unable to connect to the Server, Does the tunnel from database server to local port 1111 exist ????")
+        logger.error(error)
+        logger.error("Exiting application now")
         sys.exit()
 
 def fetch_config_info():
     file_path = os.path.join(os.getcwd(), conn_config_file)
-    print file_path
+    logger.info("config_file: " + file_path)
     file_handler = open(file_path, "rb")
     obj_config = pickle.load(file_handler)
     file_handler.close()
@@ -98,35 +109,31 @@ def fetch_single_deliverable(obj,id):
 def delete_deliverable_obj(obj,id):
 
     deliverable_to_delete = obj.sess.query(obj.Deliverables).filter(obj.Deliverables.id == id)
-    #print deliverable_to_delete
     deliverable_to_delete.delete()
     obj.sess.commit()
 
 def delete_shipment_obj(obj,id):
     shipment_to_delete = obj.sess.query(obj.Shipments).filter(obj.Shipments.id == id)
-    # print deliverable_to_delete
     shipment_to_delete.delete()
     obj.sess.commit()
 
 
 def add_deliverable_data_dir(obj,dao_object):
-    #sess.query(obj.Deliverables_data_dir).filter(obj.Deliverables_data_dir.path == dao_object.path).count()
     if obj.sess.query(obj.Deliverables_data_dir).filter(obj.Deliverables_data_dir.path == dao_object.path).count() >0:
-        print dao_object.path + "  exists in database .."
+        logger.warning(dao_object.path + "  exists in database ..")
         return False
     else:
-        print "Now adding to Db::" + dao_object.path
+        logger.info("Now adding to Db::" + dao_object.path)
         obj.sess.add(dao_object)
         obj.sess.commit()
         return False
 
 def add_deliverable_qc_dir(obj,dao_object):
-    #print sess.query(obj.Deliverables_qc_dir).filter(obj.Deliverables_qc_dir.path == dao_object.path).count()
     if obj.sess.query(obj.Deliverables_qc_dir).filter(obj.Deliverables_qc_dir.path == dao_object.path).count() > 0:
-        print dao_object.path + "  exists in database .."
+        logger.warning(dao_object.path + "  exists in database ..")
         return False
     else:
-        print "Now adding to db:: " + dao_object.path
+        logger.info("Now adding to db:: " + dao_object.path)
         obj.sess.add(dao_object)
         obj.sess.commit()
         return False
@@ -168,15 +175,13 @@ def check_and_add_raw_seq_info(obj):
     s = obj.scoped_session()
     result = s.execute(cmd)
     s.close()
-    print "Now synchronizing the Raw seq info for orca data "
+    logger.info("Now synchronizing the Raw seq info for orca data ")
 
     for seq_data in result:
-        #print seq_data
         new_entry = obj.Raw_seq_info()
         (new_entry.seq, new_entry.real_line_name, new_entry.preplot_name, new_entry.first_ffid, new_entry.first_shot,new_entry.fg_ffid, new_entry.fgsp, new_entry.lg_ffid, new_entry.lgsp, new_entry.last_ffid, new_entry.last_shot,new_entry.start_data) = seq_data
         old_object = obj.sess.query(obj.Raw_seq_info).filter(obj.Raw_seq_info.seq == new_entry.seq).first()
         if old_object != None:
-            #print "Found an existing object ... "
             for a_key in new_entry.__dict__.keys():
                 if a_key == '_sa_instance_state':
                     pass
@@ -184,18 +189,18 @@ def check_and_add_raw_seq_info(obj):
                     if str(new_entry.__dict__[a_key]) == str(old_object.__dict__[a_key]):
                         pass
                     else:
-                        print "Update => " +str(new_entry.seq) + " : " + str(a_key) + " old: " + str(
-                            old_object.__dict__[a_key]) + " new: " + str(new_entry.__dict__[a_key])
+                        logger.info("Update => " +str(new_entry.seq) + " : " + str(a_key) + " old: " + str(
+                            old_object.__dict__[a_key]) + " new: " + str(new_entry.__dict__[a_key]))
                         if new_entry.__dict__[a_key] != None:
                             setattr(old_object, a_key, str(new_entry.__dict__[a_key]))
 
                         else:
-                            print "Omit as the new entry is None"
+                            logger.info("Omit as the new entry is None")
 
         else:
-               print "creating the new entry for " + str(new_entry.seq) + " ",
+               logger.info("creating the new entry for " + str(new_entry.seq) + " ")
                obj.sess.add(new_entry)
-               print "done..."
+               logger.info("done...")
     obj.sess.commit()
 
 def get_deliverables_dao_objects(obj):
@@ -247,7 +252,7 @@ def fetch_seq_id_from_name(obj,seq_name):
     return seq_id
 
 def add_SEGD_QC_obj(obj,dao_obj):
-    print "Now adding to SEGD QC DB Table: " + str(dao_obj.deliverable_id)+ " Set no: " + str(dao_obj.set_no) + " Tape no: " + dao_obj.tape_no
+    logger.info("Now adding to SEGD QC DB Table: " + str(dao_obj.deliverable_id)+ " Set no: " + str(dao_obj.set_no) + " Tape no: " + dao_obj.tape_no)
     obj.sess.add(dao_obj)
     obj.sess.commit()
 

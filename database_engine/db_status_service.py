@@ -15,7 +15,7 @@ class db_pinger(object):
         conn = self.db_connection_obj.db_engine.connect()
         cursor = conn.cursor()
         try:
-            self.parent. "server ping successful"
+
             cursor.execute("SELECT 1")
         except:
             print "raising disconnect error"

@@ -50,7 +50,7 @@ def setup_logging():
     file_handler.write('-' * 80 + '\n')
     file_handler.close()
     logging.basicConfig(level=log_level,
-                    format='%(asctime)s %(name)-30s %(levelname)-8s %(message)s',
+                    format='%(asctime)s %(name)-60s %(levelname)-10s %(message)s',
                     datefmt='%y-%m-%d %H:%M',
                     filename= log_path,
                     filemode='a')

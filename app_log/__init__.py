@@ -3,6 +3,7 @@ import time
 import socket
 import os
 
+stream_formatter = '%(asctime)s %(levelname)-8s %(message)s'
 
 def get_log_level():
     """

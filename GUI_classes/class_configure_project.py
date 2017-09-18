@@ -12,7 +12,7 @@
 #       def check_DUG_connection
 #------------------------------------------------------------------------
 
-import os
+import sys, os
 import paramiko
 import pickle
 from configuration.Tool_tips import tool_tips_mapper_dict
@@ -392,7 +392,7 @@ class configuration_window(QtGui.QScrollArea): #The class object to create the c
             self.is_ok_to_save()
         else:
             #print "The specified path does not exist..."
-            logger.info("The specified path does not exist...")
+            logger.error("The specified path does not exist...")
 
 
     def check_DUG_connection(self):
@@ -403,20 +403,23 @@ class configuration_window(QtGui.QScrollArea): #The class object to create the c
         #print "The DUG connection setting are:::" + str(host) + " " + str(username) + "  " + str(password)
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        client.connect(host, username=username, password=password)
-        if client.get_transport().is_active():
+        try:
+            client.connect(host, username=username, password=password)
+            if client.get_transport().is_active():
             #print "Connection to DUG workstation sucessful!!!!!"
-            logger.info("Connection to DUG workstation sucessful.....")
-            self.pushbutton_chk_DUG.setStyleSheet("background-color: green")
-            transport = paramiko.Transport((host, port))
-            transport.connect(username=username, password=password)
-            sftp_client = paramiko.SFTPClient.from_transport(transport)
-            DUG_ops.transfer_directory_checking_script(sftp_client)
-            for i in range(7,10):
-                self.configuration_status[i] = 1
-                self.is_ok_to_save()
-        else:
-            logger.info("Connection to DUG workstation unsucessful!!!!!")
+                logger.info("Connection to DUG workstation sucessful.....")
+                self.pushbutton_chk_DUG.setStyleSheet("background-color: green")
+                transport = paramiko.Transport((host, port))
+                transport.connect(username=username, password=password)
+                sftp_client = paramiko.SFTPClient.from_transport(transport)
+                DUG_ops.transfer_directory_checking_script(sftp_client)
+                for i in range(7,10):
+                    self.configuration_status[i] = 1
+                    self.is_ok_to_save()
+        except Exception as error:
+            logger.error(error)
+            logger.error("Connection to DUG workstation unsucessful, exiting application!!!!!")
+            sys.exit()
 
 
         #print "Please check settings to the DUG workstation"
@@ -430,9 +433,12 @@ class configuration_window(QtGui.QScrollArea): #The class object to create the c
             for i in range(7):
                 self.configuration_status[i] = 1
                 self.is_ok_to_save()
-        except:
+        except Exception as error:
             #print "The databse settings are incorrect......"
-            logger.info("The databse settings are incorrect......")
+            logger.error("The databse settings are incorrect......now exiting")
+            logger.error(error)
+            sys.exit()
+
 
 
 

@@ -1,5 +1,13 @@
 from configuration import *
 from dug_ops.DUG_ops import run_command_on_tape_server
+import logging
+from app_log import  stream_formatter
+logger = logging.getLogger(__name__)
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+formatter = logging.Formatter(stream_formatter)
+console.setFormatter(formatter)
+logger.addHandler(console)
 
 class Tape_service(object):
     def __init__(self,parent):
@@ -17,7 +25,7 @@ class Tape_service(object):
         self.set_eject_command_dict()
 
     def run_cmd(self,cmd,dev_to_use):
-        print dev_to_use
+        logger.info(cmd)
         run_command_on_tape_server(self.DUG_connection_obj,cmd,dev_to_use)
 
 

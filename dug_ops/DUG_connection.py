@@ -4,10 +4,11 @@ from configuration import conn_config_file,Tape_server_dict
 from dug_ops.DUG_ops import transfer_SEGY_check_script
 
 import logging
+from app_log import  stream_formatter
 logger = logging.getLogger(__name__)
 console = logging.StreamHandler()
 console.setLevel(logging.INFO)
-formatter = logging.Formatter('%(levelname)-8s %(message)s')
+formatter = logging.Formatter(stream_formatter)
 console.setFormatter(formatter)
 logger.addHandler(console)
 

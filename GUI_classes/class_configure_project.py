@@ -21,6 +21,14 @@ from configuration import *
 from database_engine import DB_ops
 from dug_ops import DUG_ops
 
+import logging
+logger = logging.getLogger(__name__)
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+formatter = logging.Formatter('%(levelname)-8s %(message)s')
+console.setFormatter(formatter)
+logger.addHandler(console)
+
 def create_central_labels(label_text):
     labels_widget = QtGui.QLabel(label_text)
     labels_widget.setAlignment(QtCore.Qt.AlignCenter)
@@ -265,7 +273,7 @@ class configuration_window(QtGui.QScrollArea): #The class object to create the c
             sumstatus += int(self.configuration_status[i])
         if sumstatus ==11:
             #print "Saving the project configuration to configuration.ini"
-            self.parent.run_log.append( "Saving the project configuration to configuration.ini")
+            logger.info( "Saving the project configuration to configuration.ini")
             config_obj = save_project_configuration(self)
             status_existing_config = os.path.exists(os.path.join(os.getcwd(), "Tape_QC_configuration.ini"))
             if status_existing_config:
@@ -273,24 +281,24 @@ class configuration_window(QtGui.QScrollArea): #The class object to create the c
                 os.remove(os.path.join(os.getcwd(), "Tape_QC_configuration.ini"))
             file_name = os.path.join(os.getcwd(), conn_config_file)
             #print "Creating the new configuration file %s", file_name
-            self.parent.run_log.append("Creating the new configuration file")
+            logger.info("Creating the new configuration file")
             filehandler = open(file_name, "wb")
             pickle.dump(config_obj, filehandler)
             filehandler.close()
             #print "New configuration file saved , you can now use it..."
-            self.parent.run_log.append("New configuration file saved , you can now use it...")
+            logger.info("New configuration file saved , you can now use it...")
             self.pushbutton_commit.setStyleSheet("background-color: green")
             self.save_status = 1
             #DUG_ops.transfer_SEGY_check_script()
         else:
             #print "Unable to save, Some of the configuraitons may be empty or incorrect ..."
-            self.parent.run_log.append("Unable to save, Some of the configuraitons may be empty or incorrect ...")
+            logger.info("Unable to save, Some of the configuraitons may be empty or incorrect ...")
 
     def load_list(self):
         status = os.path.exists(str(self.load_path.text()))
         if status:
             #print "File found, now loading..." + str(self.load_path.text())
-            self.parent.run_log.append(str("File found, now loading..." + str(self.load_path.text())))
+            logger.info(str("File found, now loading..." + str(self.load_path.text())))
 
             file_handler = open(str(self.load_path.text()),'rb')
             config_obj = pickle.load(file_handler)
@@ -316,7 +324,7 @@ class configuration_window(QtGui.QScrollArea): #The class object to create the c
 
 
         else:
-            print "Sorry the specified file does not exist ....."
+           logger.info("Sorry the specified file does not exist .....")
 
     def load_list_browse(self):
         fname = QtGui.QFileDialog.getOpenFileName(self, 'Open file', 'c:\\')
@@ -325,7 +333,7 @@ class configuration_window(QtGui.QScrollArea): #The class object to create the c
         #print "Checking if the selected File exists..."
         status = os.path.exists(fname)
         if status:
-            print "File found, now loading..." + str(self.load_path.text())
+            logger.info("File found, now loading..." + str(self.load_path.text()))
             file_handler = open(fname, 'rb')
             config_obj = pickle.load(file_handler)
             file_handler.close()
@@ -353,17 +361,17 @@ class configuration_window(QtGui.QScrollArea): #The class object to create the c
             self.check_path_DUG()
 
         else:
-            print "Sorry the specified file does not exist ....."
+            logger.warning("Sorry the specified file does not exist .....")
 
     def use_config_and_quit(self):
         if self.save_status == 1:
-            print "For the current session using the saved configuration"
+            logger.info("For the current session using the saved configuration")
             self.close()
         else:
-            print "No valid configuration_available....."
+            logger.warning("No valid configuration_available.....")
 
     def check_path_DUG(self):
-        self.parent.run_log.append("Checking the path for DUG project.........")
+        logger.info("Checking the path for DUG project.........")
         #print "Checking the path for DUG project........."
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -378,12 +386,12 @@ class configuration_window(QtGui.QScrollArea): #The class object to create the c
         if status == "True":
             self.pushbutton_chk_DUG_path.setStyleSheet("background-color: green")
             #print "Found the path for DUG project:: " + str(self.DUG_segy_path.text())
-            self.parent.run_log.append(str("Found the path for DUG project:: " + str(self.DUG_segy_path.text())))
+            logger.info(str("Found the path for DUG project:: " + str(self.DUG_segy_path.text())))
             self.configuration_status[10] = 1
             self.is_ok_to_save()
         else:
             #print "The specified path does not exist..."
-            self.parent.run_log.append("The specified path does not exist...")
+            logger.info("The specified path does not exist...")
 
 
     def check_DUG_connection(self):
@@ -397,7 +405,7 @@ class configuration_window(QtGui.QScrollArea): #The class object to create the c
         client.connect(host, username=username, password=password)
         if client.get_transport().is_active():
             #print "Connection to DUG workstation sucessful!!!!!"
-            self.parent.run_log.append("Connection to DUG workstation sucessful.....")
+            logger.info("Connection to DUG workstation sucessful.....")
             self.pushbutton_chk_DUG.setStyleSheet("background-color: green")
             transport = paramiko.Transport((host, port))
             transport.connect(username=username, password=password)
@@ -407,7 +415,7 @@ class configuration_window(QtGui.QScrollArea): #The class object to create the c
                 self.configuration_status[i] = 1
                 self.is_ok_to_save()
         else:
-            self.parent.run_log.append("Connection to DUG workstation unsucessful!!!!!")
+            logger.info("Connection to DUG workstation unsucessful!!!!!")
 
 
         #print "Please check settings to the DUG workstation"
@@ -423,7 +431,7 @@ class configuration_window(QtGui.QScrollArea): #The class object to create the c
                 self.is_ok_to_save()
         except:
             #print "The databse settings are incorrect......"
-            self.parent.run_log.append("The databse settings are incorrect......")
+            logger.info("The databse settings are incorrect......")
 
 
 

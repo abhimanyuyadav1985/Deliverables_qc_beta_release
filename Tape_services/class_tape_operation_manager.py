@@ -8,6 +8,15 @@ from Tape_services.class_SEGD_QC_service import SEGD_QC_service
 from Tape_services.class_Tape_service import Tape_service
 from database_engine.DB_ops import get_all_SEGY_deliverable_for_tape_write
 
+import logging
+from app_log import  stream_formatter
+logger = logging.getLogger(__name__)
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+formatter = logging.Formatter(stream_formatter)
+console.setFormatter(formatter)
+logger.addHandler(console)
+
 class Tape_operation_manager(object):
 
     def __init__(self,parent):
@@ -35,13 +44,13 @@ class Tape_operation_manager(object):
                 self.set_tape_drive(typed_tape_drive)
                 return True
             else:
-                print "The specified tape drive does not exist"
+                logger.warning("The specified tape drive does not exist")
                 self.get_verified_tape_drive(GUI_object)
 
 
     def set_tape_drive(self, tape_drive):
         self.tape_drive = tape_drive
-        print "The tape drive is now set to :: " + self.tape_drive
+        logger.info("The tape drive is now set to :: " + self.tape_drive)
 
     def get_verified_set(self,GUI_object):
         top_message = "Set number"
@@ -52,12 +61,12 @@ class Tape_operation_manager(object):
                self.set_working_set(typed_set_number)
                return True
             else:
-                print "The entered set number is not in range"
+                logger.warning("The entered set number is not in range")
                 self.get_verified_set(GUI_object)
 
     def set_working_set(self, set_number):
         self.set_no = str(set_number)
-        print "The tape operation service working set is now :: " + str(self.set_no)
+        logger.info("The tape operation service working set is now :: " + str(self.set_no))
 
 
 
@@ -65,7 +74,7 @@ class Tape_operation_manager(object):
         self.deliverable = self.deliverable_dict[deliverable_name]
         self.dir_service.set_deliverable(self.deliverable)
         self.file_service.set_deliverable(self.deliverable)
-        print "Tape operation serivce Deliverable is now set to:: " + self.deliverable.name
+        logger.info("Tape operation serivce Deliverable is now set to:: " + self.deliverable.name)
         self.set_service_class_name(self.deliverable.class_d)
 
     def set_service_class_name(self, service_class_name):
@@ -77,7 +86,7 @@ class Tape_operation_manager(object):
             self.service_class = SEGD_QC_service(self)
         else:
             self.service_class = SEGY_service(self)
-        print "The tape operation service is not set to :: " + self.service_class.name
+        logger.info("The tape operation service is not set to :: " + self.service_class.name)
 
 
     def set_seq_name(self,name):

@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker,scoped_session
 import pickle
 from sqlalchemy.ext.automap import automap_base
 from configuration import conn_config_file, orca_schema_name, deliverables_qc_schema_name,echo_mode
-import os
+import os,sys
 
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
@@ -93,6 +93,8 @@ class db_connection_obj(object):
         except Exception as error:
             logger.critical(error)
             self.db_engine_status = False
+            logger.critical("Exiting application since it cannot conenct to Db")
+            sys.exit()
 
     def initialize_db_Session(self):
         logger.info("Now setting up the Session ....")

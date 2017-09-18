@@ -20,6 +20,14 @@ from dug_ops.DUG_ops import return_encoded_log
 from configuration.SEGY_header_type_wise import file_size_identifier
 
 import posixpath
+import logging
+from app_log import  stream_formatter
+logger = logging.getLogger(__name__)
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+formatter = logging.Formatter(stream_formatter)
+console.setFormatter(formatter)
+logger.addHandler(console)
 
 class Synchronization_service(object):
     """
@@ -60,13 +68,13 @@ class Synchronization_service(object):
         *sync SEGY file size : simply to make the current version back compatible when we were not checking the file size to store in IRDB
 
         """
-        print "Now doing statup diagnostic ... "
+        logger.info("Now doing statup diagnostic ... ")
         # self.sync_raw_seq_info()
         # self.check_all_deliverable_dir_and_db_entries()
         # self.sync_media_list()
         # self.SEGD_QC_sync()
         # self.sync_segy_file_size()
-        print "Startup diagnostic now complete "
+        logger.info("Startup diagnostic now complete ")
 
     def sync_segy_file_size(self):
         """
@@ -80,10 +88,10 @@ class Synchronization_service(object):
             self.db_connection_obj.SEGY_QC_on_disk.file_size == None).all()
         # Now for each element parse the log and fill file size
         if len(result) == 0:
-            print " All file size in segy on disk table already present"
+            logger.info(" All file size in segy on disk table already present")
         else:
             for a_item in result:
-                print "Now updating file size for: deliverable_id: " + str(a_item.deliverable_id) + " linename: " + a_item.line_name
+                logger.info("Now updating file size for: deliverable_id: " + str(a_item.deliverable_id) + " linename: " + a_item.line_name)
                 encoded_data = return_encoded_log(self.DUG_connection_obj,a_item.segy_on_disk_qc_log_path)
                 log_data = encoded_data.decode('base64')
                 for line in log_data.split('\n'):
@@ -92,7 +100,7 @@ class Synchronization_service(object):
                         line_list = line_to_use.split()
                         a_item.file_size = line_list[len(line_list) - 2]
             self.db_connection_obj.sess.commit()
-            print "file size update complete .."
+            logger.info("file size update complete ..")
 
 
 
@@ -164,7 +172,7 @@ class Synchronization_service(object):
         Parse the logs and provide SEGD QC status from DUG system to IRDB
 
         """
-        print "You are now in SEGD sync ..... "
+        logger.info("Now executing SEGD QC sync...")
         #1. get the list of deliverables belonging to SEGD class
         segd_deliverables_list = get_list_of_segd_deliverables(self.db_connection_obj)
         #2. get the list of available tapes from orca table
@@ -289,6 +297,7 @@ class Synchronization_service(object):
                                             SEGD_qc.date_time_str = date_str
                                         SEGD_qc.line_name = tape_log_run_dict[orca_tape][1]
                                     self.db_connection_obj.sess.commit()
+        logger.info('SEGD QC sync finished')
 
 
 

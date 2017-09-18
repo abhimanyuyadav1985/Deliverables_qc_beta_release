@@ -11,10 +11,11 @@ from sqlalchemy.engine import Engine
 
 import time
 import logging
+from app_log import  stream_formatter
 logger = logging.getLogger(__name__)
 console = logging.StreamHandler()
 console.setLevel(logging.INFO)
-formatter = logging.Formatter('%(levelname)-8s %(message)s')
+formatter = logging.Formatter(stream_formatter)
 console.setFormatter(formatter)
 logger.addHandler(console)
 

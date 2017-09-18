@@ -43,6 +43,12 @@ import posixpath
 
 import logging
 logger = logging.getLogger(__name__)
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+formatter = logging.Formatter('%(levelname)-8s %(message)s')
+console.setFormatter(formatter)
+logger.addHandler(console)
+
 ####################################################################################################################################
 ###Main window
 ####################################################################################################################################
@@ -304,36 +310,28 @@ class Top_Window(QtGui.QMainWindow):
     def setup_DB_service(self):
         logger.info("Now setting up the DB connection object.....")
         self.db_connection_obj = db_connection_obj()
-        print "DB connection object setup complete"
+
         logger.info("DB connection object setup complete")
         self.show_project_info()
 
     def setup_DUG_clients(self):
-        print "Now setting up the DUG connection objects .."
         logger.info("Now setting up the DUG connection objects ..")
         self.DUG_connection_obj = DUG_connection_object(self.default_use_env)
-        print "DUG connection object setup complete"
         logger.info("DUG connection object setup complete")
 
     def setup_Tape_operation_manager(self):
-        print "Now setting up the Tape operation manager......"
         logger.info("Now setting up the Tape operation manager......")
         self.tape_operation_manager = Tape_operation_manager(self)
-        print "Done ........"
         logger.info("Tape operation manager setup complete")
 
     def run_startup_sync_service(self):
-        print "Now Executing startup sync......"
         logger.info("Now executing startup sync services")
         self.sync_service.sync_all()
-        print "Done ........"
         logger.info("Startup sync services finished")
 
     def setup_sync_service(self):
-        print "Now setting up the Sync services......"
         logger.info("Now setting up the Sync services......")
         self.sync_service = Synchronization_service(self)
-        print "Done ........"
         logger.info("All sync services setup complete")
 
     def sftp_transfer_necessary_files(self):
@@ -388,7 +386,7 @@ class Top_Window(QtGui.QMainWindow):
             self.run_startup_sync_service()
             self.run_job_sync_service()
         else:
-            print "No valid configuration in use"
+            logger.info("No valid configuration in use")
 
 
 
@@ -431,8 +429,7 @@ class Top_Window(QtGui.QMainWindow):
             self.working_widget.closed.connect(self.show_project_info)
             self.layout.update()
         else:
-            print "No valid configuration in use ..."
-            self.run_log.append("No valid configuration in use ...")
+            logger.info("No valid configuration in use ...")
 
 # ----------------------------------------------------------------------------------+
 #Functions related to setting up Deliverables
@@ -440,8 +437,7 @@ class Top_Window(QtGui.QMainWindow):
 
     def show_tape_dashboard(self):
         if self.config_check == False:
-            print "No valid configuration in use ..."
-            self.run_log.append("No valid configuration in use ...")
+            logger.info("No valid configuration in use ...")
         else:
             self.tape_dashboard_visible = True
             self.tape_dashboard = Tape_drive_dashboard(self)
@@ -466,8 +462,7 @@ class Top_Window(QtGui.QMainWindow):
 
     def set_deliverables_window(self):
         if self.config_check ==False:
-            print "No valid configuration in use ..."
-            self.run_log.append("No valid configuration in use ...")
+            logger.info("No valid configuration in use ...")
         else:
             self.layout.itemAtPosition(1, 1).widget().deleteLater()
             self.working_widget = Deliverables_summary_window(self)
@@ -480,8 +475,7 @@ class Top_Window(QtGui.QMainWindow):
 
     def set_new_deliverable(self):
         if self.config_check == False:
-            print "No valid configuration in use ..."
-            self.run_log.append("No valid configuration in use ...")
+            logger.info("No valid configuration in use ...")
         else:
             self.layout.itemAtPosition(1, 1).widget().deleteLater()
             self.working_widget = add_new_deliverable(self)
@@ -493,8 +487,7 @@ class Top_Window(QtGui.QMainWindow):
 
     def set_view_single_deliverable_detail(self,id):
         if self.config_check == False:
-            print "No valid configuration in use ..."
-            self.run_log.append("No valid configuration in use ...")
+            logger.info("No valid configuration in use ...")
         else:
             self.layout.itemAtPosition(1, 1).widget().deleteLater()
             self.working_widget = view_single_deliverable_detail(self,id)
@@ -506,8 +499,7 @@ class Top_Window(QtGui.QMainWindow):
 
     def set_edit_single_deliverable_detail(self, id):
         if self.config_check == False:
-            #print "No valid configuration in use ..."
-            self.run_log.append("No valid configuration in use ...")
+            logger.info("No valid configuration in use ...")
         else:
             self.layout.itemAtPosition(1, 1).widget().deleteLater()
             self.working_widget = edit_single_deliverable(self, id)
@@ -520,8 +512,7 @@ class Top_Window(QtGui.QMainWindow):
 
     def set_usb_functions(self):
         if self.config_check == False:
-            # print "No valid configuration in use ..."
-            self.run_log.append("No valid configuration in use ...")
+            logger.info("No valid configuration in use ...")
         else:
             self.layout.itemAtPosition(1, 1).widget().deleteLater()
             self.working_widget = usb_tools_window(self)
@@ -533,8 +524,7 @@ class Top_Window(QtGui.QMainWindow):
 
     def set_add_usb_label(self):
         if self.config_check == False:
-            # print "No valid configuration in use ..."
-            self.run_log.append("No valid configuration in use ...")
+            logger.info("No valid configuration in use ...")
         else:
             self.layout.itemAtPosition(1, 1).widget().deleteLater()
             self.working_widget = add_usb_label(self)
@@ -546,8 +536,7 @@ class Top_Window(QtGui.QMainWindow):
 
     def set_edit_usb(self,id):
         if self.config_check == False:
-            # print "No valid configuration in use ..."
-            self.run_log.append("No valid configuration in use ...")
+            logger.info("No valid configuration in use ...")
         else:
             self.layout.itemAtPosition(1, 1).widget().deleteLater()
             self.working_widget = edit_usb_window(self,id)
@@ -559,8 +548,7 @@ class Top_Window(QtGui.QMainWindow):
 
     def set_usb_summary(self):
         if self.config_check == False:
-            # print "No valid configuration in use ..."
-            self.run_log.append("No valid configuration in use ...")
+            logger.info("No valid configuration in use ...")
         else:
             self.layout.itemAtPosition(1, 1).widget().deleteLater()
             self.working_widget = usb_summary_window(self)
@@ -576,8 +564,7 @@ class Top_Window(QtGui.QMainWindow):
 
     def set_shipment_tools(self):
         if self.config_check == False:
-            print "No valid configuration in use ..."
-            self.run_log.append("No valid configuration in use ...")
+            logger.info("No valid configuration in use ...")
         else:
             self.layout.itemAtPosition(1, 1).widget().deleteLater()
             self.working_widget = shipment_tools(self)
@@ -588,8 +575,7 @@ class Top_Window(QtGui.QMainWindow):
 
     def set_shipments_summary(self):
         if self.config_check == False:
-            print "No valid configuration in use ..."
-            self.run_log.append("No valid configuration in use ...")
+            logger.info("No valid configuration in use ...")
         else:
             self.layout.itemAtPosition(1, 1).widget().deleteLater()
             self.working_widget = shipment_summary(self)
@@ -600,8 +586,7 @@ class Top_Window(QtGui.QMainWindow):
 
     def set_add_shipment(self):
         if self.config_check == False:
-            print "No valid configuration in use ..."
-            self.run_log.append("No valid configuration in use ...")
+            logger.info("No valid configuration in use ...")
         else:
             self.layout.itemAtPosition(1, 1).widget().deleteLater()
             self.working_widget = add_new_shipment(self)
@@ -612,8 +597,7 @@ class Top_Window(QtGui.QMainWindow):
 
     def set_edit_shipment(self,id):
         if self.config_check == False:
-            print "No valid configuration in use ..."
-            self.run_log.append("No valid configuration in use ...")
+            logger.info("No valid configuration in use ...")
         else:
             self.layout.itemAtPosition(1, 1).widget().deleteLater()
             self.working_widget = edit_shipment(self, id)
@@ -632,8 +616,7 @@ class Top_Window(QtGui.QMainWindow):
 
     def set_segd_tools_window(self):
         if self.config_check == False:
-            print "No valid configuration in use ..."
-            self.run_log.append("No valid configuration in use ...")
+            logger.info("No valid configuration in use ...")
         else:
             self.layout.itemAtPosition(1, 1).widget().deleteLater()
             self.working_widget = SEGD_tool_window(self)
@@ -645,8 +628,7 @@ class Top_Window(QtGui.QMainWindow):
 
     def set_survey_wide_SEGD_QC_summary(self):
         if self.config_check == False:
-            print "No valid configuration in use ..."
-            self.run_log.append("No valid configuration in use ...")
+            logger.info("No valid configuration in use ...")
         else:
             self.sync_service.SEGD_QC_sync()
             self.layout.itemAtPosition(1, 1).widget().deleteLater()
@@ -657,15 +639,14 @@ class Top_Window(QtGui.QMainWindow):
             self.resize(self.minimumSizeHint())
 
     def run_SEGD_QC_summary_sync(self):
-        print "Now executing SEGD QC sync ..",
+        logger.info("Now executing SEGD QC sync ..")
         self.sync_service.SEGD_QC_sync()
-        print "Done .."
+        logger.info("Done ..")
         self.set_survey_wide_SEGD_QC_summary()
 
     def set_segy_tools_window(self):
         if self.config_check == False:
-            print "No valid configuration in use ..."
-            self.run_log.append("No valid configuration in use ...")
+            logger.info("No valid configuration in use ...")
         else:
             self.layout.itemAtPosition(1, 1).widget().deleteLater()
             self.working_widget = SEGY_Tool_Window(self)
@@ -677,8 +658,7 @@ class Top_Window(QtGui.QMainWindow):
 
     def set_segy_qc_status(self,deliverable):
         if self.config_check == False:
-            print "No valid configuration in use ..."
-            self.run_log.append("No valid configuration in use ...")
+            logger.info("No valid configuration in use ...")
         else:
             self.layout.itemAtPosition(1, 1).widget().deleteLater()
             self.working_widget = SEGY_qc_status(self,deliverable)
@@ -695,8 +675,7 @@ class Top_Window(QtGui.QMainWindow):
 
     def print_change_log_report(self):
         if self.config_check == False:
-            print "No valid configuration in use ..."
-            self.run_log.append("No valid configuration in use ...")
+            logger.info("No valid configuration in use ...")
         else:
             if self.thread_dict['excel'][1].isRunning():
                 self.print_to_run_log("The excel thread is busy.., please wait for T1 to finish working")

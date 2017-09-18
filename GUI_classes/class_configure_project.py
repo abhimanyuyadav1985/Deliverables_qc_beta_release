@@ -22,10 +22,11 @@ from database_engine import DB_ops
 from dug_ops import DUG_ops
 
 import logging
+from app_log import  stream_formatter
 logger = logging.getLogger(__name__)
 console = logging.StreamHandler()
 console.setLevel(logging.INFO)
-formatter = logging.Formatter('%(levelname)-8s %(message)s')
+formatter = logging.Formatter(stream_formatter)
 console.setFormatter(formatter)
 logger.addHandler(console)
 

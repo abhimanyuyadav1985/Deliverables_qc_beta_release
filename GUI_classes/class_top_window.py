@@ -260,8 +260,8 @@ class Top_Window(QtGui.QMainWindow):
 
     def set_config_message(self):
         #self.check_existing_config()
-        self.run_log.append("Configuration status is set to: " + str(self.config_check))
-        self.run_log.append("Either add a new configuration or use Refresh to load existing")
+        logger.info("Configuration status is set to: " + str(self.config_check))
+        logger.info("Either add a new configuration or use Refresh to load existing")
         if self.config_check is False:
             self.config_status_signal.emit(False)
             self.config_message.setText(" Please press the refresh button to load the existing configuration ...")
@@ -670,7 +670,7 @@ class Top_Window(QtGui.QMainWindow):
 
     def print_to_run_log(self, str_to_print):
         print self.thread1.isRunning()
-        self.run_log.append(str_to_print)
+        logger.info(str_to_print)
 
 
     def print_change_log_report(self):

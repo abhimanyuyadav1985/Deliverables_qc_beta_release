@@ -54,7 +54,7 @@ def transfer_directory_checking_script(sftp_client):
     local_path_2 = os.path.join(os.getcwd(), "dug_ops", 'directory_checking_script.py')
     sftp_client.put(local_path_2, file_path_2)
 
-@logger_util
+
 def check_generic_path(DUG_connection_obj,path_to_check):
     cmd = "python " + '/d/home/share/bin/directory_checking_script.py ' + path_to_check
     stdin, stdout, stderr = DUG_connection_obj.ws_client.exec_command(cmd)

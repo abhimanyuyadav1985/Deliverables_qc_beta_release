@@ -5,20 +5,32 @@ import posixpath
 from dug_ops.DUG_ops import append_register_entry
 from database_engine.DB_ops import get_all_raw_seq_info_objects
 
+
+import logging
+from app_log import  stream_formatter
+logger = logging.getLogger(__name__)
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+formatter = logging.Formatter(stream_formatter)
+console.setFormatter(formatter)
+logger.addHandler(console)
+
+
+
 class SEGD_QC_service(object):
     def __init__(self,parent):
         self.parent = parent
         self.name = "SEGD_QC_service"
+        logger.info("SEGD QC Script: " + segd_qc_script)
 
     def run(self):
         run_cmd = str("nohup " + segd_qc_script + " tape=/dev/" + str(self.parent.tape_drive)+ " disk=" + str(self.SEGD_path) + " log=" + str(self.logfile) + " firstdisk=" + str(self.min_ffid) + " lastdisk=" + str(self.max_ffid) + ' > /dev/null 2>&1 &')
         if use_mode == 'Demo':
-            print "Running in DEMO mode command will only be printed not executed ...."
+            logger.warning("Running in DEMO mode command will only be printed not executed ....")
         elif use_mode == 'Production':
-            print run_cmd
+            logger.info("Now sending to DUG buffer: " + run_cmd)
             self.check_for_previous_run()
             segd_qc_register_obj = [run_cmd , self.parent.tape_drive, self.logfile , 'segd_qc']
-            print "Now adding the SEGD QC task to buffers .."
             append_register_entry(self.parent.DUG_connection_obj,segd_qc_register_obj)
 
     def check_for_previous_run(self):
@@ -27,19 +39,19 @@ class SEGD_QC_service(object):
         if result == None:
             pass
         else:
-            print "Previous run deltected .. deleting it from database for integrity..",
+            logger.warning("Previous run deltected .. deleting it from database for integrity..")
             self.parent.db_connection_obj.sess.delete(result)
             self.parent.db_connection_obj.sess.commit()
-            print "done .. "
+
 
 
     def set_SEGD_path(self,Seq_dir):
         self.SEGD_path = posixpath.join(self.parent.dir_service.data_dir_path_dict['segd.segd'],Seq_dir)
-        print "The SEGD data directory set:: " + self.SEGD_path
+        logger.info("The SEGD data directory set:: " + self.SEGD_path)
 
     def set_logfile(self):
         self.logfile = self.parent.file_service.set_segd_log_file_path()
-        print "The log file set :: " + self.logfile
+        logger.info("The log file set :: " + self.logfile)
 
     def get_list_of_available_segd_seq(self):
         dir_path = self.parent.dir_service.data_dir_path_dict['segd.segd']

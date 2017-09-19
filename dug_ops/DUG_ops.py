@@ -17,6 +17,18 @@ formatter = logging.Formatter(stream_formatter)
 console.setFormatter(formatter)
 logger.addHandler(console)
 
+from functools import wraps
+
+def logger_util(func):
+    @wraps(func)
+    def with_logging(*args, **kwargs):
+        ts = time.time()
+        result = func(*args,**kwargs)
+        te = time.time()
+        time_string = "{:8.5f} sec".format(te-ts)
+        logger.info("Finished executing: " + func.__name__ + "  <Execution time => " + time_string)
+        return result
+    return with_logging
 
 file_path = os.path.join(os.getcwd(), conn_config_file)
 
@@ -30,20 +42,19 @@ def main():
 #     DUG_connection_obj.sftp_client.put(local_path_2, file_path_2)
 #     print "done.."
 
+@logger_util
 def transfer_run_log_fetcher(DUG_connection_obj):
-    logger.info("Now transferring the run log fetcher")
     file_path_2 = '/d/home/share/bin/run_log_fetcher.py'
     local_path_2 = os.path.join(os.getcwd(), "dug_ops", 'run_log_fetcher.py')
     DUG_connection_obj.sftp_client.put(local_path_2, file_path_2)
-    logger.info("done..")
 
+@logger_util
 def transfer_directory_checking_script(sftp_client):
     file_path_2 = '/d/home/share/bin/directory_checking_script.py'
     local_path_2 = os.path.join(os.getcwd(), "dug_ops", 'directory_checking_script.py')
-    logger.info("Transferring the directory checking script .... ")
     sftp_client.put(local_path_2, file_path_2)
-    logger.info("done..")
 
+@logger_util
 def check_generic_path(DUG_connection_obj,path_to_check):
     cmd = "python " + '/d/home/share/bin/directory_checking_script.py ' + path_to_check
     stdin, stdout, stderr = DUG_connection_obj.ws_client.exec_command(cmd)
@@ -52,6 +63,7 @@ def check_generic_path(DUG_connection_obj,path_to_check):
     #print "The status from generic path check ==" + status
     return status
 
+@logger_util
 def transfer_SEGD_QC_parser_script(DUG_connection_obj):
     path_to_check = '/d/home/share/bin/SEGD_QC_parser.py'
     status = check_generic_path(DUG_connection_obj, path_to_check)
@@ -59,10 +71,9 @@ def transfer_SEGD_QC_parser_script(DUG_connection_obj):
     #if status == "False":
     file_path_2 = '/d/home/share/bin/SEGD_QC_parser.py'
     local_path_2 = os.path.join(os.getcwd(), "dug_ops", 'SEGD_QC_parser.py')
-    logger.info("Transferring the SEGD tape QC parsing script .... ")
     DUG_connection_obj.sftp_client.put(local_path_2, file_path_2)
-    logger.info("done..")
 
+@logger_util
 def transfer_base_64_encoder(DUG_connection_obj):
     path_to_check = '/d/home/share/bin/base_64_encoder.py'
     status = check_generic_path(DUG_connection_obj, path_to_check)
@@ -70,10 +81,9 @@ def transfer_base_64_encoder(DUG_connection_obj):
     #if status == "False":
     file_path_2 = '/d/home/share/bin/base_64_encoder.py'
     local_path_2 = os.path.join(os.getcwd(), "dug_ops", 'base_64_encoder.py')
-    logger.info("Transferring the base 64 encoder script .... ")
     DUG_connection_obj.sftp_client.put(local_path_2, file_path_2)
-    logger.info("done..")
 
+@logger_util
 def transfer_SEGY_check_script(DUG_connection_obj):
     dug_path = str(DUG_connection_obj.DUG_proj_path)
     project_name = str(DUG_connection_obj.DUG_project_name)
@@ -95,11 +105,13 @@ def transfer_SEGY_check_script(DUG_connection_obj):
         logger.info("Now decompressing the tarball and creating the softlink..")
         decompress_and_softlink_creation(DUG_connection_obj,path_to_check)
 
+@logger_util
 def transfer_run_daemons(DUG_connection_obj):
     create_register_paths(DUG_connection_obj)
     transfer_task_execution_daemon(DUG_connection_obj)
     transfer_task_database(DUG_connection_obj)
 
+@logger_util
 def create_register_paths(DUG_connection_obj):
     dug_path = str(DUG_connection_obj.DUG_proj_path)
     path_list = [posixpath.join(dug_path,'register'),posixpath.join(dug_path,'register','from_app')]
@@ -111,7 +123,7 @@ def create_register_paths(DUG_connection_obj):
         else:
             logger.info('Found : ' + a_path)
 
-
+@logger_util
 def transfer_task_execution_daemon(DUG_connection_obj):
     dug_path = str(DUG_connection_obj.DUG_proj_path)
     path_to_check = posixpath.join(dug_path,'register','deliverables_qc_task_execution_daemon.py')
@@ -126,6 +138,7 @@ def transfer_task_execution_daemon(DUG_connection_obj):
     else:
         logger.info("Task execution daemaon already exits ..... ")
 
+@logger_util
 def transfer_task_database(DUG_connection_obj):
     dug_path = str(DUG_connection_obj.DUG_proj_path)
     path_to_check = posixpath.join(dug_path, 'register', 'task_database.sqlite3')
@@ -140,7 +153,7 @@ def transfer_task_database(DUG_connection_obj):
     else:
         logger.info("Task database already exists..... ")
 
-
+@logger_util
 def decompress_and_softlink_creation(DUG_connection_obj,path_to_check):
     DUG_segy_path = str(DUG_connection_obj.DUG_proj_path)
     cmd = "tar -xf " + DUG_segy_path + "/segy-hdr-chk-mp.tar.gz -C " + DUG_segy_path + "/"
@@ -150,7 +163,7 @@ def decompress_and_softlink_creation(DUG_connection_obj,path_to_check):
     DUG_connection_obj.ws_client.exec_command(cmd)
     logger.info("softlink created ..")
 
-
+@logger_util
 def create_generic_directory(DUG_connection_obj,path_to_create):
     cmd = "mkdir " + path_to_create
     stdin, stdout, stderr = DUG_connection_obj.ws_client.exec_command(cmd)
@@ -159,6 +172,7 @@ def create_generic_directory(DUG_connection_obj,path_to_create):
     else:
         return False
 
+@logger_util
 def run_command_on_tape_server(DUG_connection_obj,cmd,dev_to_use):
     #now 1st check the busy device file
     path_dev_file = os.path.join(os.getcwd(),'temp','busy_dev')
@@ -177,10 +191,11 @@ def run_command_on_tape_server(DUG_connection_obj,cmd,dev_to_use):
         logger.info("done .. ")
         return stdout
 
+@logger_util
 def run_command_on_ws_client(DUG_connection_obj,cmd):
     stdin, stdout, stderr = DUG_connection_obj.ws_client.exec_command(cmd)
 
-
+@logger_util
 def fetch_directory_content_list(DUG_connection_obj,cmd):
     stdin, stdout, stderr = DUG_connection_obj.ws_client.exec_command(cmd)
     directory_listing = []
@@ -188,7 +203,7 @@ def fetch_directory_content_list(DUG_connection_obj,cmd):
         directory_listing.append(item.rstrip())
     return directory_listing
 
-
+@logger_util
 def get_SEGD_QC_status(DUG_conenction_obj, path):
     cmd = str('python /d/home/share/bin/SEGD_QC_parser.py ' + path )
     stdin, stdout, stderr = DUG_conenction_obj.ws_client.exec_command(cmd)
@@ -200,7 +215,7 @@ def get_SEGD_QC_status(DUG_conenction_obj, path):
     else:
         return False
 
-
+@logger_util
 def get_SEGD_QC_run_finish_status(DUG_conenction_obj, path):
     cmd = str('python /d/home/share/bin/SEGD_QC_parser.py ' + path)
     stdin, stdout, stderr = DUG_conenction_obj.ws_client.exec_command(cmd)
@@ -213,15 +228,17 @@ def get_SEGD_QC_run_finish_status(DUG_conenction_obj, path):
     else:
         return False
 
-
+@logger_util
 def SFTP_generic_file(DUG_connection_obj,local_path,remote_path):
     DUG_connection_obj.sftp_client.put(local_path, remote_path)
 
+@logger_util
 def return_encoded_log(DUG_connection_obj,log_path):
     cmd = str('python /d/home/share/bin/base_64_encoder.py ' + log_path)
     stdin, stdout, stderr = DUG_connection_obj.ws_client.exec_command(cmd)
     return stdout.read()
 
+@logger_util
 def get_file_timestamp(DUG_connection_obj,file_path):
     cmd = str('stat ' + file_path)
     stdin, stdout, stderr = DUG_connection_obj.ws_client.exec_command(cmd)
@@ -230,7 +247,7 @@ def get_file_timestamp(DUG_connection_obj,file_path):
         std_out.append(line)
     return std_out
 
-
+@logger_util
 def create_a_pickle_file_for_command(register_obj):
     status = 'queue'
     sysip = str(socket.gethostbyname(socket.gethostname()))
@@ -248,7 +265,7 @@ def create_a_pickle_file_for_command(register_obj):
 
     return (file_path,file_name)
 
-
+@logger_util
 def append_register_entry(DUG_connection_obj, register_obj):
     (local_path,file_name) = create_a_pickle_file_for_command(register_obj)
     dug_path = DUG_connection_obj.DUG_proj_path

@@ -18,6 +18,16 @@ console.setLevel(logging.INFO)
 formatter = logging.Formatter(stream_formatter)
 console.setFormatter(formatter)
 logger.addHandler(console)
+from functools import wraps
+
+from app_log import timeit
+
+def logger_util(func):
+    @wraps(func)
+    def with_logging(*args, **kwargs):
+        logger.info("Finished executing: " + func.__name__)
+        return func(*args, **kwargs)
+    return with_logging
 
 @event.listens_for(Engine, "before_cursor_execute")
 def before_cursor_execute(conn, cursor, statement,
@@ -66,6 +76,8 @@ class db_connection_obj(object):
         self.initialize_dao_seq_segy_qc_on_disk()
         self.initialize_dao_segy_write()
 
+    @timeit
+    @logger_util
     def initialize_db_engine(self):
         #file_path = os.path.join(Path(os.getcwd()).parent, conn_config_file) # use this string to test the stand alone connection module
         file_path = os.path.join(os.getcwd(), conn_config_file) # use this string for production mode in the application
@@ -84,11 +96,9 @@ class db_connection_obj(object):
         # with SSHTunnelForwarder((host_IP, 22), ssh_password=host_pword, ssh_username=host_user,
         #                         remote_bind_address=('127.0.0.1', 5432),local_bind_address=('0.0.0.0', 1111))as server:
         engine_definition = str('postgresql://'+ db_user + ":"+db_pword + "@127.0.0.1:1111/"+db_name)
-        logger.info("Now setting up DB engine ..")
         #return create_engine(engine_definition)
         try:
             self.db_engine =  create_engine(engine_definition, poolclass = QueuePool,echo = echo_mode)
-            logger.info("Done.....")
             self.db_engine_status = True
         except Exception as error:
             logger.critical(error)
@@ -96,170 +106,170 @@ class db_connection_obj(object):
             logger.critical("Exiting application since it cannot conenct to Db")
             sys.exit()
 
+    @timeit
+    @logger_util
     def initialize_db_Session(self):
-        logger.info("Now setting up the Session ....")
         try:
             self.Session =  sessionmaker(self.db_engine)
-            logger.info("Done.....")
         except Exception as e:
             logger.critical("Unable to setup db_session")
 
-
+    @timeit
+    @logger_util
     def initialize_db_working_session(self):
-        logger.info("Now setting up working database session")
         try:
             self.sess = self.Session()
         except Exception as error:
             logger.critical(error)
 
+    @timeit
+    @logger_util
     def initialize_scoped_session(self):
-        logger.info("Now setting up scoped Session...")
         try:
             self.scoped_session = scoped_session(self.Session)
-            logger.info("Done.....")
         except Exception as error:
             logger.critical(error)
 
+    @timeit
+    @logger_util
     def initialize_metadata(self):
-        logger.info("Now initializing schema Metadata")
         try:
             self.metadata_orca = MetaData(schema=orca_schema_name)
             self.metadata_deliverables_qc = MetaData(schema = deliverables_qc_schema_name)
-            logger.info("Done")
         except Exception as error:
             logger.critical(error)
 
+    @timeit
+    @logger_util
     def initialize_base(self):
-        logger.info("Initializing bases to create DAO from schema metadata")
         try:
             self.Base_orca = automap_base(metadata = self.metadata_orca)
             self.Base_orca.prepare(self.db_engine, reflect=True)
             self.Base_deliverables_qc = automap_base(metadata = self.metadata_deliverables_qc)
             self.Base_deliverables_qc.prepare(self.db_engine, reflect=True)
-            logger.info("Done")
         except Exception as error:
             logger.critical(error)
 
+    @timeit
+    @logger_util
     def initialize_dao_project_info(self):
-        logger.info("Now setting up DAO for Project info....")
         try:
             self.Project_info = self.Base_orca.classes.project_info
-            logger.info("Done.......")
         except Exception as error:
             logger.error(error)
 
     def initialize_dao_deliverables_definition(self):
         self.Deliverables_def = Table('deliverables',self.metadata_deliverables_qc,autoload = True,autoload_with =self.db_engine)
 
+    @timeit
+    @logger_util
     def initialize_dao_deliverables(self):
-        logger.info("Now setting up DAO for deliverables table....")
         try:
             self.Deliverables =  self.Base_deliverables_qc.classes.deliverables
-            logger.info("Done.......")
         except Exception as error:
             logger.error(error)
 
+    @timeit
+    @logger_util
     def initialize_dao_deliverables_data_dir(self):
-        logger.info("Now setting up DAO for deliverables data dir table....")
         try:
             self.Deliverables_data_dir = self.Base_deliverables_qc.classes.deliverables_data_dir
-            logger.info("Done.......")
         except Exception as error:
             logging.error(error)
 
+    @timeit
+    @logger_util
     def initialize_dao_deliverables_qc_dir(self):
-        logger.info("Now setting up DAO for deliverables qc dir table....")
         try:
             self.Deliverables_qc_dir = self.Base_deliverables_qc.classes.deliverables_qc_dir
-            logger.info("Done.......")
         except Exception as error:
             logging.error(error)
 
+    @timeit
+    @logger_util
     def initialize_dao_raw_seq_info(self):
-        logger.info("Now setting up DAO for Raw seq info table....")
         try:
             self.Raw_seq_info = self.Base_deliverables_qc.classes.raw_seq_info
-            logger.info("Done.......")
         except Exception as error:
             logging.error(error)
 
+    @timeit
+    @logger_util
     def initialize_dao_shipments(self):
-        logger.info("Now setting up DAO for shipments table....")
         try:
             self.Shipments = self.Base_deliverables_qc.classes.shipment_entries
-            logger.info("Done.......")
         except Exception as error:
             logger.error(error)
 
+    @timeit
+    @logger_util
     def initialize_dao_tape(self):
-        logger.info("Now setting up DAO for orca SEGD tape table ......")
         try:
             self.SEGD_tapes = self.Base_orca.classes.tape
-            logger.info("Done ......")
         except Exception as error:
             logger.error(error)
 
+    @timeit
+    @logger_util
     def initialize_dao_segd_qc(self):
-        logger.info("Now setting up DAO for orca SEGD tape QC table ......")
         try:
             self.SEGD_qc = self.Base_deliverables_qc.classes.segd_qc
-            logger.info("Done ......")
         except Exception as error:
             logger.error(error)
 
+    @timeit
+    @logger_util
     def initialize_dao_media_list(self):
-        logger.info("Now adding the DAO for media list table .....")
         try:
             self.Media_list = self.Base_deliverables_qc.classes.media_list
-            logger.info("Done .... ")
         except Exception as error:
             logger.error(error)
 
+    @timeit
+    @logger_util
     def initialize_dao_usb_list(self):
-        logger.info("Now adding the DAO for usb list table .... ")
         try:
             self.USB_list = self.Base_deliverables_qc.classes.usb_list
-            logger.info("Done ....")
         except Exception as error:
             logger.error(error)
 
+    @timeit
+    @logger_util
     def initialize_dao_usb_files(self):
-        logger.info("Now adding the DAO for usb files list table ....")
         try:
             self.USB_files = self.Base_deliverables_qc.classes.usb_files
-            logger.info("Done ....")
         except Exception as error:
             logger.error(error)
 
+    @timeit
+    @logger_util
     def initialize_dao_change_log(self):
-        logger.info("Now adding DAO for change log table .....")
         try:
             self.change_log = self.Base_deliverables_qc.classes.change_log
-            logger.info("Done ...")
         except Exception as error:
             logger.error(error)
 
+    @timeit
+    @logger_util
     def initialize_dao_line(self):
-        logger.info("Now adding DAO for change line table .....")
         try:
             self.Line = self.Base_orca.classes.line
-            logger.info("Done ...")
         except Exception as error:
             logger.error(error)
 
+    @timeit
+    @logger_util
     def initialize_dao_seq_segy_qc_on_disk(self):
-        logger.info("Now adding DAO for change SEGY on disk QC  table .....")
         try:
             self.SEGY_QC_on_disk = self.Base_deliverables_qc.classes.seq_segy_qc_on_disk
-            logger.info("Done ...")
         except Exception as error:
             logger.error(error)
 
+    @timeit
+    @logger_util
     def initialize_dao_segy_write(self):
-        logger.info("Now adding DAO for SEGY write Table ...")
         try:
             self.SEGY_write = self.Base_deliverables_qc.classes.segy_write
-            logger.info("Done ...")
         except Exception as error:
             logger.error(error)
 

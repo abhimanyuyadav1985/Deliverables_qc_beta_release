@@ -16,6 +16,16 @@ from configuration import use_mode,segy_write_script,sequence_wise_SEGY, SEGY_3D
 from dug_ops.DUG_ops import append_register_entry
 from GUI_classes.class_SEGY_QC_form import SEGY_QC_Form
 
+
+import logging
+from app_log import  stream_formatter
+logger = logging.getLogger(__name__)
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+formatter = logging.Formatter(stream_formatter)
+console.setFormatter(formatter)
+logger.addHandler(console)
+
 class SEGY_service(object):
     
     def __init__(self,parent,**kwargs):
@@ -28,18 +38,20 @@ class SEGY_service(object):
         self.dir_service = deliverable_dir_service_through_db(self)
         self.file_service = deliverable_file_service(self)
 
+        logger.info("SEGY Write Script: " + segy_write_script)
+
 
     def run(self):
         self.SEGY_path = ''
         for a_path in self.path_list:
             self.SEGY_path = self.SEGY_path + " " + a_path
         run_cmd = str("nohup " + segy_write_script + " tape=/dev/" + str(self.parent.tape_drive)+ self.SEGY_path + " > " + self.log_path + ' 2>&1 &')
+        logger.info("Command to be executed : " + run_cmd)
         if use_mode == 'Demo':
-            print "Running in DEMO mode command will only be printed not executed ...."
-            print run_cmd
+            logger.warning("Running in DEMO mode command will only be printed not executed ....")
         elif use_mode == 'Production':
             segd_qc_register_obj = [run_cmd, self.parent.tape_drive, self.log_path, 'segy_w']
-            print "Now adding the SEGY write task to buffers .."
+            logger.info("Now adding the SEGY write task to buffers ..")
             append_register_entry(self.DUG_connection_obj, segd_qc_register_obj)
 
     def create_qc_obj_dict(self):
@@ -291,7 +303,7 @@ class SEGY_service(object):
                         #print self.Deliverable.sgyt.decode('base64')
                         self.choose_sequence(ops)
                     else:
-                        print "No SGYT found for the deliverable in the database !!!"
+                        logger.warning("No SGYT found for the deliverable in the database !!!")
                 elif self.Deliverable.type in SEGY_3D:
                     if self.Deliverable.sgyt_master_status:
                         mnIL = get_item_through_dialogue(self.parent, 'Minimum IL')
@@ -312,7 +324,7 @@ class SEGY_service(object):
                             else:
                                 self.get_user_name()
                     else:
-                        print "No SGYT found for the deliverable in the database !!!"
+                        logger.warning("No SGYT found for the deliverable in the database !!!")
             elif caller == 'Sequence':
                 self.sequence = self.disp_seq_dict[attribute]
                 # get min max IL and XL ranges
@@ -343,12 +355,12 @@ class SEGY_service(object):
                     # return the list of SEGY files for the deliverable in the large files+ deliverable dir
                     self.choose_sgy_file_for_QC(ops)
                 else:
-                    print "The bin.def and trc.def files for the deliberable are not defined in the database!!!"
+                    logger.warning("The bin.def and trc.def files for the deliberable are not defined in the database!!!")
             if caller == 'file_sgy':
                 #fetch the bin def and trc def files from the database and create files in temp dir and SFTP them to the DUG WS
                 (bin_def_path, trc_def_path) = self.create_def_files_and_sFTP()
                 file_path = posixpath.join(self.dir_service.data_dir_path_dict['data'],attribute)
-                print "Now running Qc script on: " + file_path
+                logger.info("Now running Qc script on: " + file_path)
                 log_name = str(self.Deliverable.id) + "_" + self.Deliverable.name + "_" + attribute +'.headerlog'
                 log_dir = self.dir_service.data_dir_path_dict['headers']
                 log_path = posixpath.join(log_dir,log_name)
@@ -381,7 +393,7 @@ class SEGY_service(object):
     def segy_qc_from_form(self,attribute):
         (bin_def_path, trc_def_path) = self.create_def_files_and_sFTP()
         file_path = posixpath.join(self.dir_service.data_dir_path_dict['data'], attribute)
-        print "Now running Qc script on: " + file_path
+        logger.info("Now running Qc script on: " + file_path)
         log_name = str(self.Deliverable.id) + "_" + self.Deliverable.name + "_" + attribute + '.headerlog'
         log_dir = self.dir_service.data_dir_path_dict['headers']
         log_path = posixpath.join(log_dir, log_name)
@@ -417,17 +429,17 @@ class SEGY_service(object):
 
     def run_segy_qc(self,cmd,old_delete):
         if use_mode == 'Demo':
-            print "Running in Demo mode command will only be printed and not executed ... "
-            print str('rm -rf ' + self.qc_log_path)
-            print cmd
+            logger.info("Running in Demo mode commandS will only be printed and not executed ... ")
+            logger.info(str('rm -rf ' + self.qc_log_path))
+            logger.info(cmd)
         elif use_mode == 'Production':
             if old_delete: # delete the old log if there
                 del_cmd = str('rm -rf ' + self.qc_log_path)
-                print "Now deleting the old log file..",
+                logger.info("Now deleting the old log file..")
                 self.DUG_connection_obj.ws_client.exec_command(del_cmd)
-                print "Done..."
-                print "Now running the QC again"
-                print cmd
+                logger.info("Done...")
+                logger.info("Now running the QC again")
+                logger.info(cmd)
             register_entry_to_append = [cmd, 'na', self.qc_log_path, 'segy_qc',]
             append_register_entry(self.DUG_connection_obj,register_entry_to_append)
 
@@ -469,16 +481,16 @@ class SEGY_service(object):
         # check and remove if the file already exists in the temp dir
         try:
             os.remove(path_bin_def)
-            print "Found : " + path_bin_def
-            print "The existing file in the temp dir is now deleted, creating a new one with the same name "
+            logger.info("Found : " + path_bin_def)
+            logger.warning("The existing file in the temp dir is now deleted, creating a new one with the same name ")
         except:
             pass
         path_trc_def = os.path.join(working_dir, file_name_trc_def)
         # check and remove if the file already exists in the temp dir
         try:
             os.remove(path_trc_def)
-            print "Found : " + path_trc_def
-            print "The existing file in the temp dir is now deleted, creating a new one with the same name "
+            logger.info("Found : " + path_trc_def)
+            logger.warning("The existing file in the temp dir is now deleted, creating a new one with the same name ")
         except:
             pass
         fout_bin_def = open(path_bin_def,'wb')
@@ -493,10 +505,10 @@ class SEGY_service(object):
         remote_dir = self.dir_service.data_dir_path_dict['masters']
         remote_path_bin_def = posixpath.join(remote_dir,file_name_bin_def)
         remote_path_trc_def = posixpath.join(remote_dir,file_name_trc_def)
-        print "Now transferring the files from the database to the DUG WS .."
+        logger.info("Now transferring the files from the database to the DUG WS ..")
         SFTP_generic_file(self.DUG_connection_obj,path_bin_def,remote_path_bin_def)
         SFTP_generic_file(self.DUG_connection_obj,path_trc_def,remote_path_trc_def)
-        print "Done .. "
+        logger.info("Done .. ")
         return (remote_path_bin_def,remote_path_trc_def)
 
     def create_sequence_wise_sgyt(self):
@@ -511,17 +523,15 @@ class SEGY_service(object):
             local_path = os.path.join(os.getcwd(), 'temp', sgy_file_name)
             remote_path = posixpath.join(dir_for_checking, sgy_file_name)
             status = check_generic_path(self.DUG_connection_obj, remote_path)
-            print "Now attempting to transfer the file to the DUG workstation..."
+            logger.info("Now attempting to transfer the file to the DUG workstation...")
             if status == 'True':
                 action = get_item_through_dialogue(self.parent, 'Now attempting to transfer the file to the DUG workstation... type y to continue, n to exit')
                 if action == 'y':
                     SFTP_generic_file(self.DUG_connection_obj, local_path, remote_path)
-                    print 'File transfer complete .. '
                 else:
-                    print 'Aborting the file transfer!!!!'
+                    logger.warning('Aborting the file transfer!!!!')
             else:
                 SFTP_generic_file(self.DUG_connection_obj, local_path, remote_path)
-                print "File transfer complete .. "
             # now create a new DAO object
             new_obj = self.db_connection_obj.SEGY_QC_on_disk()
             new_obj.line_name = self.sequence.real_line_name
@@ -542,7 +552,7 @@ class SEGY_service(object):
             new_obj.sgyt_time_stamp = datetime.datetime.now().strftime("%I:%M%p on %B %d, %Y")
             self.db_connection_obj.sess.add(new_obj)
             self.db_connection_obj.sess.commit()
-            print "The new object for SEGY on disk QC SEGY template export is now added to the database..."
+            logger.info("The new object for SEGY on disk QC SEGY template export is now added to the database...")
         else:
             message = str("The SGYT file for deliverable_id : " + str(self.Deliverable.id) + ": name : " + self.Deliverable.name + ' line name: ' + self.sequence.real_line_name + " was exported by : " + result.sgyt_exp_uname + ' on : ' + result.sgyt_time_stamp + " Enter reason to reexport: ")
             perform = change_log_creation(gui = self.parent, conn_obj=self.db_connection_obj,message = message, type_entry = "change",location = 'sgyt')
@@ -556,18 +566,16 @@ class SEGY_service(object):
                 local_path = os.path.join(os.getcwd(), 'temp', sgy_file_name)
                 remote_path = posixpath.join(dir_for_checking, sgy_file_name)
                 status = check_generic_path(self.DUG_connection_obj, remote_path)
-                print "Now attempting to transfer the file to the DUG workstation..."
+                logger.info("Now attempting to transfer the file to the DUG workstation...")
                 if status == 'True':
                     message = "File already exists on DUG system, type y to continue, n to exit"
                     action = get_item_through_dialogue(self.parent, message)
                     if action == 'y':
                         SFTP_generic_file(self.DUG_connection_obj, local_path, remote_path)
-                        print 'File transfer complete .. '
                     else:
-                        print 'Aborting the file transfer!!!!'
+                        logger.warning('Aborting the file transfer!!!!')
                 else:
                     SFTP_generic_file(self.DUG_connection_obj, local_path, remote_path)
-                    print "File transfer complete .. "
                 # now create a new DAO object
                 result.sgyt_reel_no = self.Deliverable.reel_prefix+str(self.reel)
                 result.sgyt_fgsp = self.sequence.fgsp
@@ -602,17 +610,15 @@ class SEGY_service(object):
             local_path = os.path.join(os.getcwd(), 'temp', sgyt_file_name)
             remote_path = posixpath.join(dir_for_checking, sgyt_file_name)
             status = check_generic_path(self.DUG_connection_obj, remote_path)
-            print "Now attempting to transfer the file to the DUG workstation..."
+            logger.info("Now attempting to transfer the file to the DUG workstation...")
             if status == 'True':
                 action = get_item_through_dialogue(self.parent, 'Now attempting to transfer the file to the DUG workstation... type y to continue, n to exit')
                 if action == 'y':
                     SFTP_generic_file(self.DUG_connection_obj, local_path, remote_path)
-                    print 'File transfer complete .. '
                 else:
-                    print 'Aborting the file transfer!!!!'
+                    logger.warning('Aborting the file transfer!!!!')
             else:
                 SFTP_generic_file(self.DUG_connection_obj, local_path, remote_path)
-                print "File transfer complete .. "
             # now create a new DAO object
             new_obj = self.db_connection_obj.SEGY_QC_on_disk()
             new_obj.line_name = '3D deliverable'
@@ -633,7 +639,7 @@ class SEGY_service(object):
             new_obj.sgyt_time_stamp = datetime.datetime.now().strftime("%I:%M%p on %B %d, %Y")
             self.db_connection_obj.sess.add(new_obj)
             self.db_connection_obj.sess.commit()
-            print "The new object for SEGY on disk QC SEGY template export is now added to the database..."
+            logger.info("The new object for SEGY on disk QC SEGY template export is now added to the database...")
         else:
             message = str("The SGYT file for deliverable_id : " + str(
                 self.Deliverable.id) + ": name : " + self.Deliverable.name +  " was exported by : " + result.sgyt_exp_uname + ' on : ' + result.sgyt_time_stamp + " Enter reason to re-export: ")
@@ -649,15 +655,14 @@ class SEGY_service(object):
                 local_path = os.path.join(os.getcwd(), 'temp', sgyt_file_name)
                 remote_path = posixpath.join(dir_for_checking, sgyt_file_name)
                 status = check_generic_path(self.DUG_connection_obj, remote_path)
-                print "Now attempting to transfer the file to the DUG workstation..."
+                logger.info("Now attempting to transfer the file to the DUG workstation...")
                 if status == 'True':
                     message = "File already exists on DUG system, type y to continue, n to exit"
                     action = get_item_through_dialogue(self.parent, message)
                     if action == 'y':
                         SFTP_generic_file(self.DUG_connection_obj, local_path, remote_path)
-                        print 'File transfer complete .. '
                     else:
-                        print 'Aborting the file transfer!!!!'
+                        logger.warning('Aborting the file transfer!!!!')
                 else:
                     SFTP_generic_file(self.DUG_connection_obj, local_path, remote_path)
                     print "File transfer complete .. "

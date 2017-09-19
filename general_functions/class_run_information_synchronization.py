@@ -7,6 +7,15 @@ import pickle
 from configuration import conn_config_file
 import paramiko
 
+import logging
+from app_log import  stream_formatter
+logger = logging.getLogger(__name__)
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+formatter = logging.Formatter(stream_formatter)
+console.setFormatter(formatter)
+logger.addHandler(console)
+
 class run_information_sync(QtCore.QObject):
 
     doingWork = QtCore.pyqtSignal(bool, str, str)
@@ -31,11 +40,11 @@ class run_information_sync(QtCore.QObject):
         if os.path.exists(busy_dev_path):
             os.remove(busy_dev_path)
         else:
-            print "Creating busy devices file : " + busy_dev_path
+            logger.info("Creating busy devices file : " + busy_dev_path)
             file_handler = open(busy_dev_path, 'wb')
             pickle.dump(self.task_dict, file_handler)
             file_handler.close()
-            print "Done ..."
+            logger.info("Done ...")
             self.update_tape_dashboard.emit()
 
 
@@ -49,14 +58,15 @@ class run_information_sync(QtCore.QObject):
         if os.path.exists(local_path):
             try:
                 os.remove(local_path)
-            except:
-                print "Exception: Local task_log_busy waiting 7s"
+            except Exception as error:
+                logger.error("Exception: Local task_log_busy waiting 7s")
+                logger.error(error)
                 self.doingWork.emit(True, "Exception: Local task_log_busy waiting 7s", self.thread_name)
                 time.sleep(7)
                 self.import_task_log()
         status_lock = check_generic_path(self.DUG_connection_obj,remote_lock_path)
         if status_lock == 'True':
-            print "Deliverables QC daemon is writing to file, wait 5s"
+            logger.warning("Deliverables QC daemon is writing to file, wait 5s")
             self.doingWork.emit(True, "Deliverables QC daemon is writing to file, wait 5s", self.thread_name)
             time.sleep(5)
             self.import_task_log()
@@ -64,18 +74,19 @@ class run_information_sync(QtCore.QObject):
             status = check_generic_path(self.DUG_connection_obj, remote_path)
             if status == 'True':
                 # Now FTP the file
-                print "Now copying over the task log from remote host ..",
+                logger.info("Now copying over the task log from remote host ..")
                 self.doingWork.emit(True, "Now copying over the task log from remote host ..", self.thread_name)
                 try:
                     self.DUG_connection_obj.sftp_client.get(remote_path, local_path)
-                    print 'Done ..'
+                    logger.info('Done ..')
                     self.local_path = local_path
                     self.extract_task_info()
-                except:
-                    print "Exception: Unable to copy to local host "
+                except Exception as error:
+                    logger.error("Exception: Unable to copy to local host ")
+                    logger.error(error)
                     self.doingWork.emit(True, "Exception: Unable to copy to local host ", self.thread_name)
             else:
-                print "No active tasks on  remote host.."
+                logger.info("No active tasks on  remote host..")
                 self.doingWork.emit(True, "No active tasks on  remote host..", self.thread_name)
 
 
@@ -84,7 +95,7 @@ class run_information_sync(QtCore.QObject):
         self.task_dict = pickle.load(file_handler)
         file_handler.close()
         if len(self.task_dict.keys()) == 0:
-            print "No active tasks available"
+            logger.info("No active tasks available")
         else:
             self.create_busy_device_list()
 
@@ -104,13 +115,13 @@ class thread_DUG_client(object):
         DUG_pword = obj_config.DUG_pword
         self.transport = paramiko.Transport((host, port))
         self.transport.connect(username=DUG_user, password=DUG_pword)
-        print "Transport for DUG connection now setup.."
+        logger.info("Transport for DUG connection now setup..")
         self.ws_client = paramiko.SSHClient()
         self.ws_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self.ws_client.connect(host, username=DUG_user, password=DUG_pword)
-        print "The DUG WS client is now active .."
+        logger.info("The DUG WS client is now active ..")
         self.sftp_client = paramiko.SFTPClient.from_transport(self.transport)
-        print "The DUG sftp client is now active .. "
+        logger.info("The DUG sftp client is now active .. ")
 
 
 

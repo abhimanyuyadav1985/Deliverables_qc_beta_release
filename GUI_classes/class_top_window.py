@@ -219,7 +219,7 @@ class Top_Window(QtGui.QMainWindow):
         """
         #Addition of main menu
         self.cw = left_dock(self)
-        self.cw.setMaximumHeight(450)
+        self.cw.setMaximumHeight(500)
         self.cw.setFixedWidth(150)
         self.layout.addWidget(self.cw,1,0)
 

@@ -49,16 +49,7 @@ console.setLevel(logging.INFO)
 formatter = logging.Formatter(stream_formatter)
 console.setFormatter(formatter)
 logger.addHandler(console)
-from functools import wraps
 
-from app_log import timeit
-
-def logger_util(func):
-    @wraps(func)
-    def with_logging(*args, **kwargs):
-        logger.info("Finished executing: " + func.__name__)
-        return func(*args, **kwargs)
-    return with_logging
 
 
 ####################################################################################################################################
@@ -89,7 +80,7 @@ class Top_Window(QtGui.QMainWindow):
         super(Top_Window, self).__init__()
         # Create the logging services 1st so that all the executions can be logged
 
-
+        self.config_check = False
         self.tape_dashboard_visible = False
         self.layout = QtGui.QGridLayout()
         self.default_central_widget = QtGui.QWidget(self)
@@ -120,8 +111,9 @@ class Top_Window(QtGui.QMainWindow):
     # Functions for Top window GUI
 #------------------------------------------------------------------------------+
 
-    @timeit
-    @logger_util
+
+    
+    
     def add_threads(self):
 
         """
@@ -138,8 +130,8 @@ class Top_Window(QtGui.QMainWindow):
 
         self.thread_dict = {'excel':['thread1' , self.thread1], 'dug' : ['thread2' ,self.thread2], 'db' : ['thread3', self.thread3], 'general':['thread4', self.thread4]}
 
-    @timeit
-    @logger_util
+    
+    
     def set_window_title_and_icon(self):
         """
         Add application version from configuration.__init__()
@@ -152,23 +144,23 @@ class Top_Window(QtGui.QMainWindow):
         self.setWindowTitle(title)
         self.setWindowIcon(QtGui.QIcon(os.path.join(os.getcwd(),media_path,'polarcus.png')))# change this in the future
 
-    @timeit
-    @logger_util
+    
+    
     def set_default_use_env(self):
         """
         set use location and use mode from configuration
 
         :return: none
         """
-        self.config_check = config_check
+        self.config_check = False
         self.default_use_mode = default_use_mode
         self.default_use_env = default_use_env
 
         logger.info("Default use mode: " + str(default_use_mode))
         logger.info("Default use environment: " + default_use_env )
 
-    @timeit
-    @logger_util
+    
+    
     def set_dummy_central_widget(self):
         """
         Sets a dummy empty widget
@@ -182,8 +174,8 @@ class Top_Window(QtGui.QMainWindow):
         self.working_widget = plcs_logo
         self.layout.addWidget(self.working_widget, 1, 1)
 
-    @timeit
-    @logger_util
+    
+    
     def set_logo_and_title(self):
         """
         Add various widget titles and Polarcus logo to the application
@@ -217,8 +209,8 @@ class Top_Window(QtGui.QMainWindow):
         thread_dock_title.setFont(QtGui.QFont('SansSerif', 15))
         self.layout.addWidget(thread_dock_title, 0, 3)
 
-    @timeit
-    @logger_util
+    
+    
     def add_left_dock(self):
         """
         Adds the main menu from the class_left_dock.left_dock
@@ -231,8 +223,8 @@ class Top_Window(QtGui.QMainWindow):
         self.cw.setFixedWidth(150)
         self.layout.addWidget(self.cw,1,0)
 
-    @timeit
-    @logger_util
+    
+    
     def add_config_message(self):
         #Configuration message
         config_message_label = create_central_labels('Config Message:::')
@@ -242,8 +234,8 @@ class Top_Window(QtGui.QMainWindow):
         self.config_message.setMinimumWidth(600)
         #self.layout.addWidget(self.config_message,2,1,1,2)
 
-    @timeit
-    @logger_util
+    
+    
     def add_right_dock(self):
         """
         Adds the configuration settings from class_righ_dock.right_widget
@@ -256,8 +248,8 @@ class Top_Window(QtGui.QMainWindow):
         self.sts_inf.setFixedWidth(130)
         self.layout.addWidget(self.sts_inf,1,2)
 
-    @timeit
-    @logger_util
+    
+    
     def add_thread_dock(self):
         self.thread_dock = threads_dock(self)
         self.thread_dock.setFixedWidth(220)
@@ -278,8 +270,6 @@ class Top_Window(QtGui.QMainWindow):
         logger.info("Either add a new configuration or use Refresh to load existing")
         if self.config_check is False:
             self.config_status_signal.emit(False)
-            self.config_message.setText(" Please press the refresh button to load the existing configuration ...")
-        self.cw.setStyleSheet('background-color: rgba(128,128,128,100)')
         #Adddition of test functionality
 
         #time.sleep(2)
@@ -287,8 +277,8 @@ class Top_Window(QtGui.QMainWindow):
 #---------------------------------------------------------------------------------+
 #         Functions related to startup and services
 #---------------------------------------------------------------------------------+
-    @timeit
-    @logger_util
+
+    
     def check_existing_config(self):
         config_window = configuration_window(self)
         if os.path.exists(os.path.join(os.getcwd(), conn_config_file)):
@@ -304,8 +294,8 @@ class Top_Window(QtGui.QMainWindow):
         else:
             logger.warn("Either the config setting are incorrect ot the Tunnel to DB does not exist ... check")
 
-    @timeit
-    @logger_util
+    
+    
     def set_use_env(self): # set the use environment from the config object
         file_handler = open(os.path.join(os.getcwd(), conn_config_file), 'rb')
         config_obj = pickle.load(file_handler)
@@ -314,8 +304,8 @@ class Top_Window(QtGui.QMainWindow):
         self.use_location = self.default_use_env
         logger.info("Use location set to: " + self.use_location)
 
-    @timeit
-    @logger_util
+    
+    
     def set_config_window(self):
         self.layout.itemAtPosition(1,1).widget().deleteLater()
         self.working_widget = configuration_window(self)
@@ -327,34 +317,34 @@ class Top_Window(QtGui.QMainWindow):
         self.layout.update()
         self.working_widget.closed.connect(self.show_project_info)
 
-    @timeit
-    @logger_util
+    
+    
     def setup_DB_service(self):
         self.db_connection_obj = db_connection_obj()
         self.show_project_info()
 
-    @timeit
-    @logger_util
+    
+    
     def setup_DUG_clients(self):
         self.DUG_connection_obj = DUG_connection_object(self.default_use_env)
 
-    @timeit
-    @logger_util
+    
+    
     def setup_Tape_operation_manager(self):
         self.tape_operation_manager = Tape_operation_manager(self)
 
-    @timeit
-    @logger_util
+    
+    
     def run_startup_sync_service(self):
         self.sync_service.sync_all()
 
-    @timeit
-    @logger_util
+    
+    
     def setup_sync_service(self):
         self.sync_service = Synchronization_service(self)
 
-    @timeit
-    @logger_util
+    
+    
     def sftp_transfer_necessary_files(self):
         transfer_base_64_encoder(self.DUG_connection_obj)
         transfer_SEGD_QC_parser_script(self.DUG_connection_obj)
@@ -362,8 +352,8 @@ class Top_Window(QtGui.QMainWindow):
         transfer_run_daemons(self.DUG_connection_obj)
         transfer_run_log_fetcher(self.DUG_connection_obj)
 
-    @timeit
-    @logger_util
+    
+    
     def create_large_files_project_dir(self):
         logger.info("Now checking if the SEGY file dir for project exists in ../large_files")
         large_files_root_path = large_file_root_dict[self.use_location]
@@ -377,8 +367,8 @@ class Top_Window(QtGui.QMainWindow):
             create_generic_directory(self.DUG_connection_obj, self.large_file_dir_proj_path)
         self.DUG_connection_obj.large_files_dir = self.large_file_dir_proj_path
 
-    @timeit
-    @logger_util
+    
+    
     def run_job_sync_service(self):
         run_sync_thread_name = self.thread_dict['dug'][0]
         self.run_sync_thread_to_use = self.thread_dict['dug'][1]
@@ -392,14 +382,14 @@ class Top_Window(QtGui.QMainWindow):
         self.run_sync_service.update_tape_dashboard.connect(self.update_command_on_tape_dashboard)
         self.run_sync_thread_to_use.start_now()
 
-    @timeit
-    @logger_util
+    
+    
     def run_sync_command(self, cmd):
         logger.info("Now executing : " + cmd)
         self.DUG_connection_obj.ts_client.exec_command(str(cmd))
 
-    @timeit
-    @logger_util
+    
+    
     def application_refresh(self):
         """
         This is different from verified statrtup protocol as it only syncs application with database and does not create services again
@@ -412,8 +402,8 @@ class Top_Window(QtGui.QMainWindow):
         else:
             logger.info("No valid configuration in use")
 
-    @timeit
-    @logger_util
+    
+    
     def verified_start_up_protocol(self):
 
         self.set_use_env()
@@ -441,8 +431,8 @@ class Top_Window(QtGui.QMainWindow):
 #---------------------------------------------------------------------------------+
 #home screen widget
 #----------------------------------------------------------------------------------+
-    @timeit
-    @logger_util
+    
+    
     def show_project_info(self): # show project information from orca
         if self.config_check ==True:
             self.layout.itemAtPosition(1, 1).widget().deleteLater()
@@ -460,8 +450,8 @@ class Top_Window(QtGui.QMainWindow):
 #Functions related to setting up Deliverables
 # ----------------------------------------------------------------------------------+
 
-    @timeit
-    @logger_util
+    
+    
     def show_tape_dashboard(self):
         if self.config_check == False:
             logger.info("No valid configuration in use ...")
@@ -471,8 +461,8 @@ class Top_Window(QtGui.QMainWindow):
             self.layout.addWidget(self.tape_dashboard, 3, 0, 1,4)
             self.update_command_on_tape_dashboard()
 
-    @timeit
-    @logger_util
+    
+    
     def update_command_on_tape_dashboard(self):
         if self.tape_dashboard_visible == False:
             pass
@@ -488,8 +478,8 @@ class Top_Window(QtGui.QMainWindow):
             else:
                 pass
 
-    @timeit
-    @logger_util
+    
+    
     def set_deliverables_window(self):
         if self.config_check ==False:
             logger.info("No valid configuration in use ...")
@@ -503,8 +493,8 @@ class Top_Window(QtGui.QMainWindow):
             self.resize(self.minimumSizeHint())
             self.working_widget.closed.connect(self.show_project_info)
 
-    @timeit
-    @logger_util
+    
+    
     def set_new_deliverable(self):
         if self.config_check == False:
             logger.info("No valid configuration in use ...")
@@ -517,8 +507,8 @@ class Top_Window(QtGui.QMainWindow):
             self.resize(self.minimumSizeHint())
             self.working_widget.closed.connect(self.show_project_info)
 
-    @timeit
-    @logger_util
+    
+    
     def set_view_single_deliverable_detail(self,id):
         if self.config_check == False:
             logger.info("No valid configuration in use ...")
@@ -531,8 +521,8 @@ class Top_Window(QtGui.QMainWindow):
             self.resize(self.minimumSizeHint())
             self.working_widget.closed.connect(self.show_project_info)
 
-    @timeit
-    @logger_util
+    
+    
     def set_edit_single_deliverable_detail(self, id):
         if self.config_check == False:
             logger.info("No valid configuration in use ...")
@@ -545,8 +535,8 @@ class Top_Window(QtGui.QMainWindow):
             self.resize(self.minimumSizeHint())
             self.working_widget.closed.connect(self.show_project_info)
 
-    @timeit
-    @logger_util
+    
+    
     def set_usb_functions(self):
         if self.config_check == False:
             logger.info("No valid configuration in use ...")
@@ -559,8 +549,8 @@ class Top_Window(QtGui.QMainWindow):
             self.resize(self.minimumSizeHint())
             self.working_widget.closed.connect(self.show_project_info)
 
-    @timeit
-    @logger_util
+    
+    
     def set_add_usb_label(self):
         if self.config_check == False:
             logger.info("No valid configuration in use ...")
@@ -573,8 +563,8 @@ class Top_Window(QtGui.QMainWindow):
             self.resize(self.minimumSizeHint())
             self.working_widget.closed.connect(self.show_project_info)
 
-    @timeit
-    @logger_util
+    
+    
     def set_edit_usb(self,id):
         if self.config_check == False:
             logger.info("No valid configuration in use ...")
@@ -587,8 +577,8 @@ class Top_Window(QtGui.QMainWindow):
             self.resize(self.minimumSizeHint())
             self.working_widget.closed.connect(self.show_project_info)
 
-    @timeit
-    @logger_util
+    
+    
     def set_usb_summary(self):
         if self.config_check == False:
             logger.info("No valid configuration in use ...")
@@ -605,8 +595,8 @@ class Top_Window(QtGui.QMainWindow):
 #  Functions related to Shipments
 # --------------------------------------------------------------------------------+
 
-    @timeit
-    @logger_util
+    
+    
     def set_shipment_tools(self):
         if self.config_check == False:
             logger.info("No valid configuration in use ...")
@@ -618,8 +608,8 @@ class Top_Window(QtGui.QMainWindow):
             self.working_widget.resize(self.working_widget.minimumSizeHint())
             self.resize(self.minimumSizeHint())
 
-    @timeit
-    @logger_util
+    
+    
     def set_shipments_summary(self):
         if self.config_check == False:
             logger.info("No valid configuration in use ...")
@@ -631,8 +621,8 @@ class Top_Window(QtGui.QMainWindow):
             self.working_widget.resize(self.working_widget.minimumSizeHint())
             self.resize(self.minimumSizeHint())
 
-    @timeit
-    @logger_util
+    
+    
     def set_add_shipment(self):
         if self.config_check == False:
             logger.info("No valid configuration in use ...")
@@ -644,8 +634,8 @@ class Top_Window(QtGui.QMainWindow):
             self.working_widget.resize(self.working_widget.minimumSizeHint())
             self.resize(self.minimumSizeHint())
 
-    @timeit
-    @logger_util
+    
+    
     def set_edit_shipment(self,id):
         if self.config_check == False:
             logger.info("No valid configuration in use ...")
@@ -665,8 +655,8 @@ class Top_Window(QtGui.QMainWindow):
 # Functions related to SEGD
 #---------------------------------------------------------------------------------
 
-    @timeit
-    @logger_util
+    
+    
     def set_segd_tools_window(self):
         if self.config_check == False:
             logger.info("No valid configuration in use ...")
@@ -678,8 +668,8 @@ class Top_Window(QtGui.QMainWindow):
             self.working_widget.resize(self.working_widget.minimumSizeHint())
             self.resize(self.minimumSizeHint())
 
-    @timeit
-    @logger_util
+    
+    
     def set_survey_wide_SEGD_QC_summary(self):
         if self.config_check == False:
             logger.info("No valid configuration in use ...")
@@ -692,16 +682,16 @@ class Top_Window(QtGui.QMainWindow):
             self.working_widget.resize(self.working_widget.minimumSizeHint())
             self.resize(self.minimumSizeHint())
 
-    @timeit
-    @logger_util
+    
+    
     def run_SEGD_QC_summary_sync(self):
         logger.info("Now executing SEGD QC sync ..")
         self.sync_service.SEGD_QC_sync()
         logger.info("Done ..")
         self.set_survey_wide_SEGD_QC_summary()
 
-    @timeit
-    @logger_util
+    
+    
     def set_segy_tools_window(self):
         if self.config_check == False:
             logger.info("No valid configuration in use ...")
@@ -713,8 +703,8 @@ class Top_Window(QtGui.QMainWindow):
             self.working_widget.resize(self.working_widget.minimumSizeHint())
             self.resize(self.minimumSizeHint())
 
-    @timeit
-    @logger_util
+    
+    
     def set_segy_qc_status(self,deliverable):
         if self.config_check == False:
             logger.info("No valid configuration in use ...")
@@ -726,14 +716,14 @@ class Top_Window(QtGui.QMainWindow):
             self.working_widget.resize(self.working_widget.minimumSizeHint())
             self.resize(self.minimumSizeHint())
 
-    @timeit
-    @logger_util
+    
+    
     def print_to_run_log(self, str_to_print):
         print self.thread1.isRunning()
         logger.info(str_to_print)
 
-    @timeit
-    @logger_util
+    
+    
     def print_change_log_report(self):
         if self.config_check == False:
             logger.info("No valid configuration in use ...")
@@ -764,23 +754,23 @@ class Top_Window(QtGui.QMainWindow):
                 # start the run function on the thread muah ha ha ha ha ah !!!!!
                 self.thread_to_use.start_work(self)
 
-    @timeit
-    @logger_util
+    
+    
     def killThread(self,thread_type):
         thread = self.thread_dict[thread_type][1]
         thread.started.disconnect()
         thread.quit()
         thread.wait()
 
-    @timeit
-    @logger_util
+    
+    
     def finished_change_log_report(self):
         self.change_log_report.finished.disconnect()
         self.change_log_report.doingWork.disconnect()
         self.killThread('excel')
 
-    @timeit
-    @logger_util
+    
+    
     def closeEvent(self,event):
         self.closed.emit()
         #self.db_engine.dispose()
@@ -792,3 +782,4 @@ class Top_Window(QtGui.QMainWindow):
             sys.exit()
         except:
             sys.exit()
+

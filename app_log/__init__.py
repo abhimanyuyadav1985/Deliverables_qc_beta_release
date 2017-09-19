@@ -60,23 +60,3 @@ def setup_logging():
                     filename= log_path,
                     filemode='a')
 
-
-logger = logging.getLogger('Timing')
-console = logging.StreamHandler()
-console.setLevel(logging.INFO)
-formatter = logging.Formatter(stream_formatter)
-console.setFormatter(formatter)
-logger.addHandler(console)
-
-def timeit(method):
-    @wraps(method)
-    def timed(*args, **kw):
-        ts = time.time()
-        result = method(*args, **kw)
-        te = time.time()
-        logger.debug('%r (%r, %r) %2.5f sec' % \
-              (method.__name__, args, kw, te-ts))
-        return result
-
-    return timed
-

@@ -18,15 +18,18 @@ console.setLevel(logging.INFO)
 formatter = logging.Formatter(stream_formatter)
 console.setFormatter(formatter)
 logger.addHandler(console)
-from functools import wraps
 
-from app_log import timeit
+from functools import wraps
 
 def logger_util(func):
     @wraps(func)
     def with_logging(*args, **kwargs):
-        logger.info("Finished executing: " + func.__name__)
-        return func(*args, **kwargs)
+        ts = time.time()
+        result = func(*args,**kwargs)
+        te = time.time()
+        time_string = "{:8.5f} sec".format(te-ts)
+        logger.info("Finished executing: " + func.__name__ + "  <Execution time => " + time_string)
+        return result
     return with_logging
 
 @event.listens_for(Engine, "before_cursor_execute")
@@ -76,7 +79,7 @@ class db_connection_obj(object):
         self.initialize_dao_seq_segy_qc_on_disk()
         self.initialize_dao_segy_write()
 
-    @timeit
+    
     @logger_util
     def initialize_db_engine(self):
         #file_path = os.path.join(Path(os.getcwd()).parent, conn_config_file) # use this string to test the stand alone connection module
@@ -106,7 +109,7 @@ class db_connection_obj(object):
             logger.critical("Exiting application since it cannot conenct to Db")
             sys.exit()
 
-    @timeit
+    
     @logger_util
     def initialize_db_Session(self):
         try:
@@ -114,7 +117,7 @@ class db_connection_obj(object):
         except Exception as e:
             logger.critical("Unable to setup db_session")
 
-    @timeit
+    
     @logger_util
     def initialize_db_working_session(self):
         try:
@@ -122,7 +125,7 @@ class db_connection_obj(object):
         except Exception as error:
             logger.critical(error)
 
-    @timeit
+    
     @logger_util
     def initialize_scoped_session(self):
         try:
@@ -130,7 +133,7 @@ class db_connection_obj(object):
         except Exception as error:
             logger.critical(error)
 
-    @timeit
+    
     @logger_util
     def initialize_metadata(self):
         try:
@@ -139,7 +142,7 @@ class db_connection_obj(object):
         except Exception as error:
             logger.critical(error)
 
-    @timeit
+    
     @logger_util
     def initialize_base(self):
         try:
@@ -150,7 +153,7 @@ class db_connection_obj(object):
         except Exception as error:
             logger.critical(error)
 
-    @timeit
+    
     @logger_util
     def initialize_dao_project_info(self):
         try:
@@ -161,7 +164,7 @@ class db_connection_obj(object):
     def initialize_dao_deliverables_definition(self):
         self.Deliverables_def = Table('deliverables',self.metadata_deliverables_qc,autoload = True,autoload_with =self.db_engine)
 
-    @timeit
+    
     @logger_util
     def initialize_dao_deliverables(self):
         try:
@@ -169,7 +172,7 @@ class db_connection_obj(object):
         except Exception as error:
             logger.error(error)
 
-    @timeit
+    
     @logger_util
     def initialize_dao_deliverables_data_dir(self):
         try:
@@ -177,7 +180,7 @@ class db_connection_obj(object):
         except Exception as error:
             logging.error(error)
 
-    @timeit
+    
     @logger_util
     def initialize_dao_deliverables_qc_dir(self):
         try:
@@ -185,7 +188,7 @@ class db_connection_obj(object):
         except Exception as error:
             logging.error(error)
 
-    @timeit
+    
     @logger_util
     def initialize_dao_raw_seq_info(self):
         try:
@@ -193,7 +196,7 @@ class db_connection_obj(object):
         except Exception as error:
             logging.error(error)
 
-    @timeit
+    
     @logger_util
     def initialize_dao_shipments(self):
         try:
@@ -201,7 +204,7 @@ class db_connection_obj(object):
         except Exception as error:
             logger.error(error)
 
-    @timeit
+    
     @logger_util
     def initialize_dao_tape(self):
         try:
@@ -209,7 +212,7 @@ class db_connection_obj(object):
         except Exception as error:
             logger.error(error)
 
-    @timeit
+    
     @logger_util
     def initialize_dao_segd_qc(self):
         try:
@@ -217,7 +220,7 @@ class db_connection_obj(object):
         except Exception as error:
             logger.error(error)
 
-    @timeit
+    
     @logger_util
     def initialize_dao_media_list(self):
         try:
@@ -225,7 +228,7 @@ class db_connection_obj(object):
         except Exception as error:
             logger.error(error)
 
-    @timeit
+    
     @logger_util
     def initialize_dao_usb_list(self):
         try:
@@ -233,7 +236,7 @@ class db_connection_obj(object):
         except Exception as error:
             logger.error(error)
 
-    @timeit
+    
     @logger_util
     def initialize_dao_usb_files(self):
         try:
@@ -241,7 +244,7 @@ class db_connection_obj(object):
         except Exception as error:
             logger.error(error)
 
-    @timeit
+    
     @logger_util
     def initialize_dao_change_log(self):
         try:
@@ -249,7 +252,7 @@ class db_connection_obj(object):
         except Exception as error:
             logger.error(error)
 
-    @timeit
+    
     @logger_util
     def initialize_dao_line(self):
         try:
@@ -257,7 +260,7 @@ class db_connection_obj(object):
         except Exception as error:
             logger.error(error)
 
-    @timeit
+    
     @logger_util
     def initialize_dao_seq_segy_qc_on_disk(self):
         try:
@@ -265,7 +268,7 @@ class db_connection_obj(object):
         except Exception as error:
             logger.error(error)
 
-    @timeit
+    
     @logger_util
     def initialize_dao_segy_write(self):
         try:

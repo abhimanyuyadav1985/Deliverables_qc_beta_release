@@ -429,5 +429,10 @@ def get_all_raw_seq_info_objects(obj):
     obj_list = obj.sess.query(obj.Raw_seq_info).all()
     return obj_list
 
+@logger_util
+def get_data_for_SEGY_qc(obj, deliverable_id):
+    result = obj.sess.query(obj.SEGY_QC_on_disk).filter(obj.SEGY_QC_on_disk.deliverable_id == deliverable_id).order_by(obj.SEGY_QC_on_disk.id_seq_segy_qc).all()
+    return result
+
 if __name__=="__main__":
     fetch_deliverables_list()

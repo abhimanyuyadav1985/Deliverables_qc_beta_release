@@ -7,9 +7,21 @@ from dug_ops.DUG_ops import return_encoded_log
 from class_pop_up_text_box import pop_up_text_box_view_only
 from configuration.Tool_tips import tool_tips_mapper_dict
 
+import time
+import logging
+from app_log import  stream_formatter
+logger = logging.getLogger(__name__)
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+formatter = logging.Formatter(stream_formatter)
+console.setFormatter(formatter)
+logger.addHandler(console)
+
+
 class refresh_enabled_SEGD_QC_summary(QtGui.QWidget):
     def __init__(self,parent):
         super(refresh_enabled_SEGD_QC_summary,self).__init__()
+        ts = time.time()
         self.parent = parent
         self.grid = QtGui.QGridLayout()
         pb_refresh = QtGui.QPushButton('Refresh')
@@ -24,6 +36,9 @@ class refresh_enabled_SEGD_QC_summary(QtGui.QWidget):
         self.grid.addWidget(self.summary,2,0,1,3)
         self.setLayout(self.grid)
         self.show()
+        te = time.time()
+        time_string = "{:8.5f} sec".format(te - ts)
+        logger.info("Finished Creating SEGD QC Summary widget in: " +  time_string)
 
     def get_applicable_deliverables(self):
         self.deliverables_list = get_list_of_segd_deliverables(self.parent.db_connection_obj)

@@ -1,6 +1,15 @@
 from configuration import *
 import posixpath
 
+import logging
+from app_log import  stream_formatter
+logger = logging.getLogger(__name__)
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+formatter = logging.Formatter(stream_formatter)
+console.setFormatter(formatter)
+logger.addHandler(console)
+
 class deliverable_dir_service_through_db(object):
 
     def __init__(self,parent,**kwargs):
@@ -15,7 +24,7 @@ class deliverable_dir_service_through_db(object):
 
     def set_deliverable(self,deliverable):
         self.deliverable = deliverable
-        print "The deliverable is now set to : " + self.deliverable.name
+        logger.info("The deliverable is now set to : " + self.deliverable.name)
         self.dir_service_setup()
 
     def dir_service_setup(self):

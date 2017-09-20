@@ -13,19 +13,87 @@ from configuration import SEGY_write_to_media_table_list
 from general_functions.general_functions import get_item_through_dialogue
 from configuration.Tool_tips import tool_tips_mapper_dict
 
-class SEQG_SEGY_status_tabs(QtGui.QTabWidget):
+class SEQG_SEGY_status_tabs(QtGui.QScrollArea):
     def __init__(self, parent):
         super(SEQG_SEGY_status_tabs, self).__init__()
 
         self.parent = parent
-        self.tab1 = SEQG_SEGY_SGYT_status(self.parent)
-        self.tab2 = SEQG_SEGY_on_disk_QC(self.parent)
-        self.tab3 = SEQG_SEGY_write_QC_status(self.parent)
-        self.addTab(self.tab1, "SGYT")
-        self.addTab(self.tab2, "On disk")
-        self.addTab(self.tab3, "Write QC")
 
-        #----------------------------------------------
+        self.grid = QtGui.QGridLayout()
+
+        self.pb_summary = QtGui.QPushButton("Overall Summary")
+        self.pb_summary.clicked.connect(self.show_summary)
+        self.grid.addWidget(self.pb_summary, 0,0)
+
+
+        self.pb_sgyt = QtGui.QPushButton("SGYT Template QC")
+        self.pb_sgyt.clicked.connect(self.show_sgyt_qc)
+        self.grid.addWidget(self.pb_sgyt,0,1)
+
+        self.pb_ondisk = QtGui.QPushButton("SEGY on Disk QC")
+        self.pb_ondisk.clicked.connect(self.show_on_disk_qc)
+        self.grid.addWidget(self.pb_ondisk, 0, 2)
+
+        self.pb_write = QtGui.QPushButton("SEGY write QC")
+        self.pb_write.clicked.connect(self.show_write_qc)
+        self.grid.addWidget(self.pb_write, 0, 3)
+
+        self.stack = QtGui.QStackedWidget()
+        self.overall_summary = SEGY_all_summary(self.parent)
+        self.stack.insertWidget(0,self.overall_summary)
+        self.grid.addWidget(self.stack,1,0,1,4)
+
+        self.stack_sgyt_added = False
+        self.stack_qc_added = False
+        self.stack_write_added = False
+
+        self.setLayout(self.grid)
+
+    def show_summary(self):
+        self.stack.setCurrentIndex(0)
+
+    def show_sgyt_qc(self):
+        if self.stack_sgyt_added:
+            self.stack.setCurrentIndex(1)
+        else:
+            self.sgyt_summary = SEQG_SEGY_SGYT_status(self.parent)
+            self.stack.insertWidget(1,self.sgyt_summary)
+            self.stack_sgyt_added = True
+            self.stack.setCurrentIndex(1)
+
+
+    def show_on_disk_qc(self):
+        if self.stack_qc_added:
+            self.stack.setCurrentIndex(2)
+        else:
+            self.on_disk_summary = SEQG_SEGY_on_disk_QC(self.parent)
+            self.stack.insertWidget(2,self.on_disk_summary)
+            self.stack_qc_added = True
+            self.stack.setCurrentIndex(2)
+
+
+    def show_write_qc(self):
+        if self.stack_write_added:
+            self.stack.setCurrentIndex(3)
+        else:
+            self.write_summary = SEQG_SEGY_write_QC_status(self.parent)
+            self.stack.insertWidget(3,self.write_summary)
+            self.stack_write_added = True
+            self.stack.setCurrentIndex(3)
+
+
+
+class SEGY_all_summary(QtGui.QScrollArea):
+    def __init__(self,parent):
+        super(SEGY_all_summary, self).__init__()
+        self.grid = QtGui.QGridLayout()
+        self.title = create_central_labels("SEGY production and QC summary")
+        self.title.setFixedHeight(20)
+        self.grid.addWidget(self.title,0,0)
+        self.setLayout(self.grid)
+
+
+#----------------------------------------------
 
 class SEQG_SEGY_SGYT_status(QtGui.QScrollArea):
 

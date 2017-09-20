@@ -12,6 +12,17 @@ from class_SEGY_log import SEGY_qc_log, approve_form_SEGY_on_disk_qc
 from configuration import SEGY_write_to_media_table_list
 from general_functions.general_functions import get_item_through_dialogue
 from configuration.Tool_tips import tool_tips_mapper_dict
+from database_engine.DB_ops import get_data_for_SEGY_qc
+from dug_ops.DUG_ops import fetch_directory_content_list
+
+import logging, time
+from app_log import  stream_formatter
+logger = logging.getLogger(__name__)
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+formatter = logging.Formatter(stream_formatter)
+console.setFormatter(formatter)
+logger.addHandler(console)
 
 class SEQG_SEGY_status_tabs(QtGui.QScrollArea):
     def __init__(self, parent):
@@ -56,6 +67,7 @@ class SEQG_SEGY_status_tabs(QtGui.QScrollArea):
         if self.stack_sgyt_added:
             self.stack.setCurrentIndex(1)
         else:
+            logger.info("Adding SEGY SGYT widget for the 1st time, this may take some time..")
             self.sgyt_summary = SEQG_SEGY_SGYT_status(self.parent)
             self.stack.insertWidget(1,self.sgyt_summary)
             self.stack_sgyt_added = True
@@ -66,6 +78,7 @@ class SEQG_SEGY_status_tabs(QtGui.QScrollArea):
         if self.stack_qc_added:
             self.stack.setCurrentIndex(2)
         else:
+            logger.info("Adding SEGY on disk QC widget for the 1st time, this may take some time..")
             self.on_disk_summary = SEQG_SEGY_on_disk_QC(self.parent)
             self.stack.insertWidget(2,self.on_disk_summary)
             self.stack_qc_added = True
@@ -76,6 +89,7 @@ class SEQG_SEGY_status_tabs(QtGui.QScrollArea):
         if self.stack_write_added:
             self.stack.setCurrentIndex(3)
         else:
+            logger.info("Adding SEGY write widget for the 1st time, this may take some time..")
             self.write_summary = SEQG_SEGY_write_QC_status(self.parent)
             self.stack.insertWidget(3,self.write_summary)
             self.stack_write_added = True
@@ -99,6 +113,7 @@ class SEQG_SEGY_SGYT_status(QtGui.QScrollArea):
 
     def __init__(self, parent):
         super(SEQG_SEGY_SGYT_status, self).__init__()
+        ts = time.time()
         self.tool_tip_dict = tool_tips_mapper_dict['segy_tabs_2d']
         self.parent = parent
         self.setToolTip(self.tool_tip_dict['sgyt'])
@@ -116,6 +131,9 @@ class SEQG_SEGY_SGYT_status(QtGui.QScrollArea):
         self.widget = QtGui.QWidget()
         self.widget.setLayout(self.grid)
         self.setWidget(self.widget)
+        te = time.time()
+        time_string = "{:8.5f} sec".format(te - ts)
+        logger.info("Finished Creating SEQG SEGY status widget in: " + time_string)
         #self.show()
 
 
@@ -214,6 +232,7 @@ class SEQG_SEGY_SGYT_status(QtGui.QScrollArea):
 class SEQG_SEGY_on_disk_QC(QtGui.QScrollArea):
     def __init__(self, parent):
         super(SEQG_SEGY_on_disk_QC, self).__init__()
+        ts = time.time()
         self.parent = parent
         self.deliverable = self.parent.deliverable
         self.tool_tip_dict = tool_tips_mapper_dict['segy_tabs_2d']
@@ -223,13 +242,16 @@ class SEQG_SEGY_on_disk_QC(QtGui.QScrollArea):
 
         self.deliverable_id = self.parent.deliverable_id
         self.grid = QtGui.QGridLayout()
-
+        self.widget = QtGui.QWidget()
         # add labels
         self.add_labels()
         self.add_data()
-        self.widget = QtGui.QWidget()
         self.widget.setLayout(self.grid)
         self.setWidget(self.widget)
+
+        te = time.time()
+        time_string = "{:8.5f} sec".format(te - ts)
+        logger.info("Finished Creating SEGY on disk QC widget in: " + time_string)
 
     def add_labels(self):
         labels_list = ['Seq #', 'Line name', 'SEGYT QC','Export','Export status','Exported by', 'Time stamp','QC run status','Link', 'Header Extraction','Approve',
@@ -242,8 +264,9 @@ class SEQG_SEGY_on_disk_QC(QtGui.QScrollArea):
             self.db_connection_obj.Deliverables_data_dir.deliverable_id == self.deliverable_id).filter(
             self.db_connection_obj.Deliverables_data_dir.dir_type == 'data').first()
         self.dir_path = self.data_dir_entry.path
-        data = self.db_connection_obj.sess.query(self.db_connection_obj.SEGY_QC_on_disk).filter(self.db_connection_obj.SEGY_QC_on_disk.deliverable_id == self.deliverable_id).order_by(
-            self.db_connection_obj.SEGY_QC_on_disk.id_seq_segy_qc).all()
+        # data = self.db_connection_obj.sess.query(self.db_connection_obj.SEGY_QC_on_disk).filter(self.db_connection_obj.SEGY_QC_on_disk.deliverable_id == self.deliverable_id).order_by(
+        #     self.db_connection_obj.SEGY_QC_on_disk.id_seq_segy_qc).all()
+        data = get_data_for_SEGY_qc(self.db_connection_obj,self.deliverable_id)
         # now create a dictinoary for status
         data_dict = {}
         for obj in data:
@@ -260,6 +283,17 @@ class SEQG_SEGY_on_disk_QC(QtGui.QScrollArea):
                 line_name_list.append((aline.sequence_number, aline.real_line_name))
             else:
                 pass
+        #now fetch the directory content list
+        cmd = str("ls " + self.dir_path)
+        available_file_list = fetch_directory_content_list(self.DUG_connection_obj, cmd)
+        available_file_dict = {}
+        for a_line in line_name_list:
+            a_line_name_segy = str(a_line[1] + '.sgy')
+            if a_line_name_segy in available_file_list:
+                available_file_dict.update({a_line[1]:True})
+            else:
+                available_file_dict.update({a_line[1]:False})
+
         # now add the objects in the line_name_list
         for i in range(1, len(line_name_list) + 1):
             # the 1st two and the last two columens
@@ -279,8 +313,8 @@ class SEQG_SEGY_on_disk_QC(QtGui.QScrollArea):
                     self.grid.addWidget(pb_segy_exp,i,3)
                     file_name = str(sgyt_data.line_name + '.sgy')
                     file_path = posixpath.join(self.dir_path, file_name)
-                    status = check_generic_path(self.DUG_connection_obj, file_path)
-                    if status == 'True': # if the SEGYT file is on disk writing or finished, otherwise STOP
+                    status = available_file_dict[sgyt_data.line_name]
+                    if status: # if the SEGYT file is on disk writing or finished, otherwise STOP
                         self.grid.addWidget(decide_and_create_label(sgyt_data.segy_disk_export_status), i, 4)
                         if sgyt_data.segy_disk_export_status is not None: # if the export status is set to true or false add exporter name and time stamp labels
                             self.grid.addWidget(create_center_data(sgyt_data.segy_exporter_name),i,5)
@@ -373,6 +407,7 @@ class SEQG_SEGY_on_disk_QC(QtGui.QScrollArea):
 class SEQG_SEGY_write_QC_status(QtGui.QScrollArea):
     def __init__(self, parent):
         super(SEQG_SEGY_write_QC_status, self).__init__()
+        ts = time.time()
         self.parent = parent
         self.deliverable = self.parent.deliverable  # This is used to decide the number of tabs for SEGY write and summary
 
@@ -387,6 +422,9 @@ class SEQG_SEGY_write_QC_status(QtGui.QScrollArea):
         self.grid.addWidget(SEGY_write_widget,0,0)
 
         self.setLayout(self.grid)
+        te = time.time()
+        time_string = "{:8.5f} sec".format(te - ts)
+        logger.info("Finished Creating SEGY write summary widget in: " + time_string)
         #self.show()
 
 

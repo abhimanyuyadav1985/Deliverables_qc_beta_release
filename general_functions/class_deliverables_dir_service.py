@@ -3,6 +3,15 @@ import posixpath
 from dug_ops.DUG_ops import check_generic_path,create_generic_directory
 from database_engine.DB_ops import add_deliverable_data_dir,add_deliverable_qc_dir
 
+import logging
+from app_log import  stream_formatter
+logger = logging.getLogger(__name__)
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+formatter = logging.Formatter(stream_formatter)
+console.setFormatter(formatter)
+logger.addHandler(console)
+
 class deliverable_dir_service(object):
 
     def __init__(self,parent,**kwargs):
@@ -17,7 +26,7 @@ class deliverable_dir_service(object):
 
     def set_deliverable(self,deliverable):
         self.deliverable = deliverable
-        print "The deliverable is now set to : " + self.deliverable.name
+        logger.info("The deliverable is now set to : " + self.deliverable.name)
         self.dir_service_setup()
 
     def dir_service_setup(self):
@@ -90,9 +99,9 @@ class deliverable_dir_service(object):
     def create_directory(self,path,message):
         status = self.check_path(path)
         if status == 'True':
-            print path + " :The directory already exists.."
+            logger.info(path + " :The directory already exists..")
         else:
-            print "Now creating ::" + message + "::::" + path
+            logger.info("Now creating ::" + message + "::::" + path)
             create_generic_directory(self.DUG_connection_obj, path)
 
     def create_deliverable_dir(self):

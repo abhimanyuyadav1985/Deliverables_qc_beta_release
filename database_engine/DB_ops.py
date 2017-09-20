@@ -282,7 +282,7 @@ def check_previous_run_for_SEGD_qc(obj,id,set_no):
                                                 obj.SEGD_qc.set_no == set_no).order_by(obj.SEGD_qc.tape_no).all()
     return result
 
-@logger_util
+
 def fetch_seq_id_from_name(obj,seq_name):
     seq_from_raw_seq_info = obj.sess.query(obj.Raw_seq_info).filter(obj.Raw_seq_info.real_line_name == seq_name).first()
     seq_id = seq_from_raw_seq_info.seq
@@ -299,7 +299,7 @@ def get_all_production_sequences(obj):
     prod_seq_list = obj.sess.query(obj.Raw_seq_info).order_by(obj.Raw_seq_info.seq).all()
     return prod_seq_list
 
-@logger_util
+
 def fetch_seq_name_from_id(obj,seq_id):
     seq_from_raw_seq_info = obj.sess.query(obj.Raw_seq_info).filter(obj.Raw_seq_info.seq == seq_id).first()
     if seq_from_raw_seq_info is not None:
@@ -393,7 +393,7 @@ def get_all_SEGY_deliverable_for_tape_write(obj):
                                                                                                     obj.Deliverables.media == '3592 JA multiple', obj.Deliverables.media =='3592 JC multiple')).all()
     return result
 
-@logger_util
+
 def return_SEGD_QC_log_path(obj, tape_no, set_no):
     result = obj.sess.query(obj.SEGD_qc).filter(and_(obj.SEGD_qc.tape_no == tape_no, obj.SEGD_qc.set_no == set_no)).first()
     return result.log_path

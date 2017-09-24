@@ -712,10 +712,9 @@ class Top_Window(QtGui.QMainWindow):
             self.layout.itemAtPosition(1, 1).widget().deleteLater()
             self.working_widget = SEGY_qc_status(self,deliverable)
             self.layout.addWidget(self.working_widget, 1, 1)
-            self.layout.update()
-            self.working_widget.resize(self.working_widget.minimumSizeHint())
             self.resize(self.minimumSizeHint())
-
+            self.working_widget.setMinimumWidth(850)
+            self.layout.update()
     
     
     def print_to_run_log(self, str_to_print):

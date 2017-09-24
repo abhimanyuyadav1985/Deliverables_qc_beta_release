@@ -1,6 +1,15 @@
 from PyQt4 import QtGui,QtCore
 from general_functions.general_functions import create_central_labels
 
+import logging
+from app_log import  stream_formatter
+logger = logging.getLogger(__name__)
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+formatter = logging.Formatter(stream_formatter)
+console.setFormatter(formatter)
+logger.addHandler(console)
+
 class SEGD_QC_Form(QtGui.QWidget):
 
     def __init__(self,parent):
@@ -97,13 +106,13 @@ class SEGD_QC_Form(QtGui.QWidget):
 
     def tape_drive_selected(self):
         dst = str(self.combo_tape_drive.currentText())
-        print "Setting tape drive to: " + dst
+        logger.info("Setting tape drive to: " + dst)
 
 
 
     def deliverable_selected(self):
         deliverable = str( self.combo_deliverable.currentText())
-        print "Deliverable is set to: " + deliverable
+        logger.info("Deliverable is set to: " + deliverable)
         self.parent.tape_operation_manager.set_deliverable(deliverable)
         self.combo_set.clear()
         self.combo_set.addItems(self.parent.tape_operation_manager.get_deliverable_set_list())
@@ -119,7 +128,7 @@ class SEGD_QC_Form(QtGui.QWidget):
         else:
             set_no = str(self.combo_set.currentText())
             self.parent.tape_operation_manager.set_working_set(set_no)
-            print "Set no is set to: " + str(set_no)
+            logger.info("Set no is set to: " + str(set_no))
             self.combo_line.clear()
             line_list = self.parent.tape_operation_manager.service_class.get_list_of_available_segd_seq()
             unchecked_line_list = self.parent.tape_operation_manager.service_class.get_list_of_unchecked_SEGD_seq_for_set(line_list)
@@ -152,7 +161,7 @@ class SEGD_QC_Form(QtGui.QWidget):
             self.combo_tape.setCurrentIndex(-1)
         else:
             line_name = str(self.combo_line.currentText())
-            print "Line name is set to: " + line_name
+            logger.info("Line name is set to: " + line_name)
             self.parent.tape_operation_manager.set_seq_name(line_name)
             self.parent.tape_operation_manager.service_class.set_SEGD_path(line_name)
             self.combo_tape.clear()
@@ -180,7 +189,7 @@ class SEGD_QC_Form(QtGui.QWidget):
             pass
         else:
             tape = str(self.combo_tape.currentText())
-            print "Tape is set to: " + tape
+            logger.info("Tape is set to: " + tape)
 
 
     def execute(self):
@@ -195,7 +204,7 @@ class SEGD_QC_Form(QtGui.QWidget):
         for a_combo in self.combo_list:
             if a_combo.currentIndex() == -1:
                 combo_entry_check = False
-                print str(a_combo.objectName()) + " : Is blank aborting"
+                logger.warning(str(a_combo.objectName()) + " : Is blank aborting")
 
         if combo_entry_check == True:
             if self.chk_locked.isChecked() is True:
@@ -214,15 +223,15 @@ class SEGD_QC_Form(QtGui.QWidget):
                     self.parent.tape_operation_manager.service_class.set_logfile()
                     # Now perform tape manual vs auto check
                     if str(self.combo_tape.currentText()) == str(self.line_tape.text()):
-                        print " Ok to run"
+                        logger.info("Ok to run")
                         self.parent.tape_operation_manager.service_class.run()
                         self.close()
                     else:
-                        print "Manual and Db entries for tape do not match"
+                        logger.warning("Manual and Db entries for tape do not match")
                 else:
-                    print "Please make sure that you have checked the label"
+                    logger.warning("Please make sure that you have checked the label")
             else:
-                print "Please make sure that the SEGD tape is locked !!"
+                logger.warning("Please make sure that the SEGD tape is locked !!")
 
 
 

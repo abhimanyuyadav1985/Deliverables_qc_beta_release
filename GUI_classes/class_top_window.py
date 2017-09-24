@@ -6,7 +6,7 @@ from Tape_services.class_tape_operation_manager import Tape_operation_manager
 from database_engine.db_engine_setup import *
 from dug_ops.DUG_connection import DUG_connection_object
 from dug_ops.DUG_ops import transfer_SEGY_check_script,transfer_base_64_encoder,transfer_SEGD_QC_parser_script
-from dug_ops.DUG_ops import check_generic_path,create_generic_directory
+from dug_ops.DUG_ops import check_generic_path,create_generic_directory, transfer_sgyt_encoder
 from general_functions.class_synchronization_service import Synchronization_service
 from dug_ops.DUG_ops import transfer_run_daemons, transfer_run_log_fetcher
 from dug_ops.DUG_ops import run_command_on_tape_server
@@ -351,6 +351,7 @@ class Top_Window(QtGui.QMainWindow):
         transfer_SEGY_check_script(self.DUG_connection_obj)
         transfer_run_daemons(self.DUG_connection_obj)
         transfer_run_log_fetcher(self.DUG_connection_obj)
+        transfer_sgyt_encoder(self.DUG_connection_obj)
 
     
     

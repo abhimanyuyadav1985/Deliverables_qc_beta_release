@@ -5,6 +5,7 @@ from dug_ops.DUG_ops import return_encoded_log
 from configuration.SEGY_header_type_wise import *
 from class_pop_up_message_box import pop_up_approval_box
 from class_pop_up_text_box import pop_up_text_box_sgyt
+from dug_ops.DUG_ops import return_encoded_stripped_sgyt
 
 class SEGY_qc_log(QtGui.QWidget):
     closed = QtCore.pyqtSignal()
@@ -148,7 +149,8 @@ class SEGY_header_extraction(QtGui.QWidget):
         #--------------------------------------------------------------------------------------------
         exported_sgyt_path = db_obj.sgyt_unix_path
         user_sgyt_path = db_obj.sgyt_user_path
-        if return_encoded_log(self.DUG_connection_obj,exported_sgyt_path) == return_encoded_log(self.DUG_connection_obj,user_sgyt_path):
+
+        if return_encoded_stripped_sgyt(self.DUG_connection_obj,exported_sgyt_path) == return_encoded_stripped_sgyt(self.DUG_connection_obj,user_sgyt_path):
             sgyt_verification = True
         else:
             sgyt_verification = False

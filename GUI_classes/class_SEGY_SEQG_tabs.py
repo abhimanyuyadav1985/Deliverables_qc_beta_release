@@ -52,48 +52,35 @@ class SEQG_SEGY_status_tabs(QtGui.QScrollArea):
         self.stack = QtGui.QStackedWidget()
         self.overall_summary = SEGY_all_summary(self.parent)
         self.stack.insertWidget(0,self.overall_summary)
-        self.grid.addWidget(self.stack,1,0,1,4)
 
-        self.stack_sgyt_added = False
-        self.stack_qc_added = False
-        self.stack_write_added = False
+        logger.info("Adding SEGY SGYT widget for the 1st time, this may take some time..")
+        self.sgyt_summary = SEQG_SEGY_SGYT_status(self.parent)
+        self.stack.insertWidget(1, self.sgyt_summary)
 
+        logger.info("Adding SEGY on disk QC widget for the 1st time, this may take some time..")
+        self.on_disk_summary = SEQG_SEGY_on_disk_QC(self.parent)
+        self.stack.insertWidget(2, self.on_disk_summary)
+
+        logger.info("Adding SEGY write widget for the 1st time, this may take some time..")
+        self.write_summary = SEQG_SEGY_write_QC_status(self.parent)
+        self.stack.insertWidget(3, self.write_summary)
+
+        self.grid.addWidget(self.stack, 1, 0, 1, 4)
         self.setLayout(self.grid)
 
     def show_summary(self):
         self.stack.setCurrentIndex(0)
 
     def show_sgyt_qc(self):
-        if self.stack_sgyt_added:
-            self.stack.setCurrentIndex(1)
-        else:
-            logger.info("Adding SEGY SGYT widget for the 1st time, this may take some time..")
-            self.sgyt_summary = SEQG_SEGY_SGYT_status(self.parent)
-            self.stack.insertWidget(1,self.sgyt_summary)
-            self.stack_sgyt_added = True
-            self.stack.setCurrentIndex(1)
+        self.stack.setCurrentIndex(1)
 
 
     def show_on_disk_qc(self):
-        if self.stack_qc_added:
-            self.stack.setCurrentIndex(2)
-        else:
-            logger.info("Adding SEGY on disk QC widget for the 1st time, this may take some time..")
-            self.on_disk_summary = SEQG_SEGY_on_disk_QC(self.parent)
-            self.stack.insertWidget(2,self.on_disk_summary)
-            self.stack_qc_added = True
-            self.stack.setCurrentIndex(2)
+        self.stack.setCurrentIndex(2)
 
 
     def show_write_qc(self):
-        if self.stack_write_added:
-            self.stack.setCurrentIndex(3)
-        else:
-            logger.info("Adding SEGY write widget for the 1st time, this may take some time..")
-            self.write_summary = SEQG_SEGY_write_QC_status(self.parent)
-            self.stack.insertWidget(3,self.write_summary)
-            self.stack_write_added = True
-            self.stack.setCurrentIndex(3)
+        self.stack.setCurrentIndex(3)
 
 
 

@@ -9,17 +9,26 @@ from class_SEGY_SEQG_tabs import SEQG_SEGY_status_tabs
 from class_SEGY_3D_tabs import SEGY_3D_status_tabs
 from configuration.Tool_tips import tool_tips_mapper_dict
 
+import logging, time
+from app_log import  stream_formatter
+logger = logging.getLogger(__name__)
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+formatter = logging.Formatter(stream_formatter)
+console.setFormatter(formatter)
+logger.addHandler(console)
 
-class SEGY_qc_status(QtGui.QWidget):
+class SEGY_qc_status(QtGui.QScrollArea):
     closed = QtCore.pyqtSignal()
     def __init__(self,parent,deliverable):
 
         super(SEGY_qc_status, self).__init__()
+        ts = time.time()
         self.tool_tip_dict = tool_tips_mapper_dict['segy_status']
         self.setToolTip(self.tool_tip_dict['general'])
 
         self.parent = parent
-
+        self.minimum_width = 800
         self.db_connection_obj = self.parent.db_connection_obj
         self.DUG_connection_obj = self.parent.DUG_connection_obj
 
@@ -30,11 +39,18 @@ class SEGY_qc_status(QtGui.QWidget):
         self.grid.addWidget(create_central_labels("Deliverable details"), 0, 0 )
 
         self.deliverable_info_widget = deliverable_info_widget(self)
+        self.deliverable_info_widget.setFixedHeight(50)
+        self.deliverable_info_widget.setMinimumWidth(self.minimum_width)
+
         self.grid.addWidget(self.deliverable_info_widget,1,0)
 
         self.decide_and_use_type_tabs()
 
         self.setLayout(self.grid)
+
+        te = time.time()
+        time_string = "{:8.5f} sec".format(te - ts)
+        logger.info("Finished Creating SEGY Summary widget in: " + time_string)
         #self.show()
 
     def refresh(self):
@@ -44,12 +60,13 @@ class SEGY_qc_status(QtGui.QWidget):
     def decide_and_use_type_tabs(self): # This function decided which type of GUI is necessary for a deliverable type for SEGY QC
         if self.deliverable.type in sequence_wise_SEGY:
             self.SEGY_QC_tabs = SEQG_SEGY_status_tabs(self)
+            self.SEGY_QC_tabs.setMinimumWidth(self.minimum_width)
         elif self.deliverable.type in SEGY_3D:
             self.SEGY_QC_tabs = SEGY_3D_status_tabs(self)
         self.grid.addWidget(self.SEGY_QC_tabs, 2, 0)
 
 #-----------------------------------------------------------------------------------------
-class deliverable_info_widget(QtGui.QWidget):
+class deliverable_info_widget(QtGui.QScrollArea):
     closed = QtCore.pyqtSignal()
     def __init__(self, parent):
         super(deliverable_info_widget, self).__init__()

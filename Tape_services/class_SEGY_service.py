@@ -12,7 +12,7 @@ from dug_ops.DUG_ops import check_generic_path, SFTP_generic_file
 from dug_ops.DUG_ops import fetch_directory_content_list, append_register_entry
 from general_functions.general_functions import change_log_creation
 import datetime
-from configuration import use_mode,segy_write_script,sequence_wise_SEGY, SEGY_3D
+from configuration import use_mode,get_segy_write_script,sequence_wise_SEGY, SEGY_3D
 from dug_ops.DUG_ops import append_register_entry
 from GUI_classes.class_SEGY_QC_form import SEGY_QC_Form
 
@@ -37,15 +37,15 @@ class SEGY_service(object):
         self.name = "SEGY service"
         self.dir_service = deliverable_dir_service_through_db(self)
         self.file_service = deliverable_file_service(self)
-
-        logger.info("SEGY Write Script: " + segy_write_script)
+        self.segy_write_script = get_segy_write_script()
+        logger.info("SEGY Write Script: " + self.segy_write_script)
 
 
     def run(self):
         self.SEGY_path = ''
         for a_path in self.path_list:
             self.SEGY_path = self.SEGY_path + " " + a_path
-        run_cmd = str("nohup " + segy_write_script + " tape=/dev/" + str(self.parent.tape_drive)+ self.SEGY_path + " > " + self.log_path + ' 2>&1 &')
+        run_cmd = str("nohup " + self.segy_write_script + " tape=/dev/" + str(self.parent.tape_drive)+ self.SEGY_path + " > " + self.log_path + ' 2>&1 &')
         logger.info("Command to be executed : " + run_cmd)
         if use_mode == 'Demo':
             logger.warning("Running in DEMO mode command will only be printed not executed ....")

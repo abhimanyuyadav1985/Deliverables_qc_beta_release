@@ -24,63 +24,20 @@ formatter = logging.Formatter(stream_formatter)
 console.setFormatter(formatter)
 logger.addHandler(console)
 
-class SEQG_SEGY_status_tabs(QtGui.QScrollArea):
+class SEQG_SEGY_status_tabs(QtGui.QTabWidget):
     def __init__(self, parent):
         super(SEQG_SEGY_status_tabs, self).__init__()
 
         self.parent = parent
-
-        self.grid = QtGui.QGridLayout()
-
-        self.pb_summary = QtGui.QPushButton("Overall Summary")
-        self.pb_summary.clicked.connect(self.show_summary)
-        self.grid.addWidget(self.pb_summary, 0,0)
-
-
-        self.pb_sgyt = QtGui.QPushButton("SGYT Template QC")
-        self.pb_sgyt.clicked.connect(self.show_sgyt_qc)
-        self.grid.addWidget(self.pb_sgyt,0,1)
-
-        self.pb_ondisk = QtGui.QPushButton("SEGY on Disk QC")
-        self.pb_ondisk.clicked.connect(self.show_on_disk_qc)
-        self.grid.addWidget(self.pb_ondisk, 0, 2)
-
-        self.pb_write = QtGui.QPushButton("SEGY write QC")
-        self.pb_write.clicked.connect(self.show_write_qc)
-        self.grid.addWidget(self.pb_write, 0, 3)
-
-        self.stack = QtGui.QStackedWidget()
-        self.overall_summary = SEGY_all_summary(self.parent)
-        self.stack.insertWidget(0,self.overall_summary)
-
-        logger.info("Adding SEGY SGYT widget for the 1st time, this may take some time..")
+        self.overall_sumamry = SEGY_all_summary(self.parent)
         self.sgyt_summary = SEQG_SEGY_SGYT_status(self.parent)
-        self.stack.insertWidget(1, self.sgyt_summary)
-
-        logger.info("Adding SEGY on disk QC widget for the 1st time, this may take some time..")
         self.on_disk_summary = SEQG_SEGY_on_disk_QC(self.parent)
-        self.stack.insertWidget(2, self.on_disk_summary)
-
-        logger.info("Adding SEGY write widget for the 1st time, this may take some time..")
         self.write_summary = SEQG_SEGY_write_QC_status(self.parent)
-        self.stack.insertWidget(3, self.write_summary)
 
-        self.grid.addWidget(self.stack, 1, 0, 1, 4)
-        self.setLayout(self.grid)
-
-    def show_summary(self):
-        self.stack.setCurrentIndex(0)
-
-    def show_sgyt_qc(self):
-        self.stack.setCurrentIndex(1)
-
-
-    def show_on_disk_qc(self):
-        self.stack.setCurrentIndex(2)
-
-
-    def show_write_qc(self):
-        self.stack.setCurrentIndex(3)
+        self.addTab(self.overall_sumamry, 'Summary')
+        self.addTab(self.sgyt_summary,'SGYT')
+        self.addTab(self.on_disk_summary, 'SEGY on disk')
+        self.addTab(self.write_summary,'SEGY write')
 
 
 

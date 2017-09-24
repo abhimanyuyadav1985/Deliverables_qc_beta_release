@@ -36,13 +36,18 @@ class SEGY_qc_status(QtGui.QScrollArea):
         self.deliverable_id = self.deliverable.id
 
         self.grid = QtGui.QGridLayout()
-        self.grid.addWidget(create_central_labels("Deliverable details"), 0, 0 )
+        self.grid.addWidget(create_central_labels("Deliverable details"), 0, 0,1,4 )
+
+        self.pb_refresh = QtGui.QPushButton("Refresh")
+        self.pb_refresh.clicked.connect(self.refresh)
+        self.pb_refresh.setStyleSheet('background-color: yellow')
+        self.grid.addWidget(self.pb_refresh,0,4)
 
         self.deliverable_info_widget = deliverable_info_widget(self)
         self.deliverable_info_widget.setFixedHeight(50)
         self.deliverable_info_widget.setMinimumWidth(self.minimum_width)
 
-        self.grid.addWidget(self.deliverable_info_widget,1,0)
+        self.grid.addWidget(self.deliverable_info_widget,1,0,1,5)
 
         self.decide_and_use_type_tabs()
 
@@ -63,7 +68,7 @@ class SEGY_qc_status(QtGui.QScrollArea):
             self.SEGY_QC_tabs.setMinimumWidth(self.minimum_width)
         elif self.deliverable.type in SEGY_3D:
             self.SEGY_QC_tabs = SEGY_3D_status_tabs(self)
-        self.grid.addWidget(self.SEGY_QC_tabs, 2, 0)
+        self.grid.addWidget(self.SEGY_QC_tabs, 2, 0,1,5)
 
 #-----------------------------------------------------------------------------------------
 class deliverable_info_widget(QtGui.QScrollArea):

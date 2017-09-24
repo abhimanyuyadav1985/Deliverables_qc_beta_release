@@ -17,10 +17,18 @@ use_locations  (list)  Site location and it is used to decipher site specific se
 
 This needs further work
 """
-
-
-
 import os
+from unipath import Path
+
+
+import logging
+from app_log import  stream_formatter
+logger = logging.getLogger(__name__)
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+formatter = logging.Formatter(stream_formatter)
+console.setFormatter(formatter)
+logger.addHandler(console)
 
 #-------------------------------------------------------------------------------------
 use_locations = ['Dubai','Nadia','Naila','Asima','Alima','Amani','Adira']
@@ -80,7 +88,7 @@ SEGD_Tape_log_template = 'SEGD_Tape_log.xlsx'
 change_log_report_template = 'change_delete_log.xlsx'
 
 #----Top window----------------
-version = "20170709.1"
+version = "Beta_20170920.1"
 config_check = False
 default_use_env = ""
 echo_mode = False
@@ -105,14 +113,58 @@ location_wise_tape_driver_dict = {'Dubai': dubai_tape_drive_list,
                                   'Amani':vessel_tape_drive_list,
                                   "Adira":vessel_tape_drive_list}
 
-segd_qc_script = "segd_tape_QC.sh"
-segy_write_script = "segy_tape_write.sh"
+
+#---------------------------------------------------------------------------
+def get_segd_qc_script():
+    orignal = 'segd_tape_QC.sh'
+    file_path = os.path.join(os.getcwd(), 'manual_overrides', 'segd_qc')
+    logger.info("Reading SEGD QC script from =>  " + file_path)
+    if os.path.exists(file_path):
+        try:
+            file_handler = open(file_path,'rb')
+            for a_line in file_handler.readlines():
+                if 'SEGD_QC_SCRIPT' in a_line.rstrip():
+                    logger.info("Using New: " + str(a_line.rstrip().split("=")[1]))
+                    orignal =  str(a_line.rstrip().split("=")[1])
+            return orignal
+            file_handler.close()
+        except Exception as error:
+            logger.error(error)
+            logger.info("Using default: segd_tape_QC.sh")
+            return orignal
+    else:
+        logger.warning("Not found : " + file_path)
+        return orignal
 
 
-#--------------------------------------------------Use mode selection ----------------------
+segd_qc_script = get_segd_qc_script()
+
+
+def get_segy_write_script():
+    orignal = 'segy_tape_write.sh'
+    logger.info("Checking if SEGY write script is manually changed")
+    try:
+        file_path = os.path.join(os.getcwd(), 'manual_overrides', 'segy_w')
+        file_handler = open(file_path, 'rb')
+
+        for a_line in file_handler.readlines():
+            if 'SEGY_W_SCRIPT' in a_line.rstrip():
+                logger.info("Using New: " + str(a_line.rstrip().split("=")[1]))
+                orignal =  str(a_line.rstrip().split("=")[1])
+        return orignal
+    except Exception as error:
+        logger.error(error)
+        logger.info("Using default: segy_tape_write.sh")
+        return orignal
+
+
+segy_write_script = get_segy_write_script()
+
+#--------------------------------Use mode selection ----------------------
 #use_mode = "Demo"
 use_mode = 'Production'
 
+config_check = False
 if use_mode == "Demo":
     default_use_mode = False
 elif use_mode == 'Production':

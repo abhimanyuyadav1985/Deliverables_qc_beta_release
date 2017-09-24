@@ -43,6 +43,12 @@ def main():
 #     print "done.."
 
 @logger_util
+def transfer_sgyt_encoder(DUG_connection_obj):
+    file_path_2 = '/d/home/share/bin/strip_sgyt_and_send_encoded.py'
+    local_path_2 = os.path.join(os.getcwd(), "dug_ops", 'strip_sgyt_and_send_encoded.py')
+    DUG_connection_obj.sftp_client.put(local_path_2, file_path_2)
+
+@logger_util
 def transfer_run_log_fetcher(DUG_connection_obj):
     file_path_2 = '/d/home/share/bin/run_log_fetcher.py'
     local_path_2 = os.path.join(os.getcwd(), "dug_ops", 'run_log_fetcher.py')

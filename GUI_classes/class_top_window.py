@@ -487,9 +487,11 @@ class Top_Window(QtGui.QMainWindow):
             self.layout.itemAtPosition(1, 1).widget().deleteLater()
             self.working_widget = Deliverables_summary_window(self)
             self.layout.addWidget(self.working_widget, 1, 1)
-            self.layout.update()
+
             self.working_widget.resize(self.working_widget.minimumSizeHint())
             self.working_widget.setMinimumHeight(600)
+            self.working_widget.setMinimumWidth(600)
+            self.layout.update()
             self.resize(self.minimumSizeHint())
             self.working_widget.closed.connect(self.show_project_info)
 

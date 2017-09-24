@@ -1,5 +1,5 @@
 from PyQt4 import QtGui,QtCore
-
+from general_functions.general_functions import create_central_labels
 
 class pop_up_message_box(QtGui.QWidget):
 
@@ -112,6 +112,7 @@ class pop_up_approval_box(QtGui.QWidget):
 class pop_up_approval_box_segy_write(QtGui.QWidget):
 
     closed = QtCore.pyqtSignal(str,bool)
+    approve_all = QtCore.pyqtSignal(str,bool)
 
     def __init__(self,message):
         # define the top window
@@ -127,19 +128,24 @@ class pop_up_approval_box_segy_write(QtGui.QWidget):
         pb_approve.setObjectName("Approve")
         pb_approve.clicked.connect(self.ok_exit)
 
+        pb_approve_all = QtGui.QPushButton("Approve all on Tape")
+        pb_approve_all.setObjectName("Approve_all")
+        pb_approve_all.clicked.connect(self.ok_exit)
+
         pb_reject = QtGui.QPushButton("Reject")
         pb_reject.setObjectName("Reject")
         pb_reject.clicked.connect(self.ok_exit)
 
         message_label = QtGui.QTextEdit()
         message_label.setText(message)
-        grid.addWidget(message_label,0,0,1,2)
+        grid.addWidget(message_label,0,0,1,3)
 
-        grid.addWidget(QtGui.QLabel('Name'),1,0)
+        grid.addWidget(create_central_labels("User Name"),1,0)
         self.username = QtGui.QLineEdit()
-        grid.addWidget(self.username,1,1)
-        grid.addWidget(pb_approve,2,0)
-        grid.addWidget(pb_reject,2,1)
+        grid.addWidget(self.username,1,1,1,2)
+        grid.addWidget(pb_approve,2,1)
+        grid.addWidget(pb_approve_all,2,2)
+        grid.addWidget(pb_reject,2,0)
         self.setLayout(grid)
 
     def ok_exit(self):
@@ -149,6 +155,8 @@ class pop_up_approval_box_segy_write(QtGui.QWidget):
         if len(name_to_return) != 0:
             if obj_name == "Approve":
                 self.closed.emit(name_to_return,True)
+            elif obj_name == "Approve_all":
+                self.approve_all.emit(name_to_return,True)
             else:
                 self.closed.emit(name_to_return,False)
             self.close()

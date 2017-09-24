@@ -499,7 +499,7 @@ class SEGY_write_set_details(QtGui.QScrollArea):
 
 
     def add_labels(self):
-        label_list = ['Seq #', 'Line name','SEGY on disk QC', 'Tape write status',
+        label_list = ['Tape #','Seq #', 'Line name','SEGY on disk QC', 'Tape write status',
                       'Tape written by','Tape written on','View and QC log','Tape QC status',
                       'Tape checked by', 'Tape checked on']
         for i in range(0,len(label_list)):
@@ -541,25 +541,26 @@ class SEGY_write_set_details(QtGui.QScrollArea):
 
         # now add the objects
         for i in range(1, len(line_name_list) + 1): # This needs to be added one more time
-            self.grid.addWidget(create_center_data(str(line_name_list[i - 1][0])), i, 0)
+            self.grid.addWidget(create_center_data(str(line_name_list[i - 1][0])), i, 1)
 
-            self.grid.addWidget(create_center_data(line_name_list[i - 1][1]), i, 1)
+            self.grid.addWidget(create_center_data(line_name_list[i - 1][1]), i, 2)
 
             if line_name_list[i-1][1] in self.segy_ondisk_data_dict.keys():
-                self.grid.addWidget(decide_and_create_label(self.segy_ondisk_data_dict[line_name_list[i-1][1]].segy_on_disk_qc_status),i,2)
+                self.grid.addWidget(decide_and_create_label(self.segy_ondisk_data_dict[line_name_list[i-1][1]].segy_on_disk_qc_status),i,3)
                 segy_qc_id = self.segy_ondisk_data_dict[line_name_list[i-1][1]].id_seq_segy_qc
                 if segy_qc_id in self.segy_write_obj_dict_set_wise.keys():
-                    self.grid.addWidget(decide_and_create_label(self.segy_write_obj_dict_set_wise[segy_qc_id].tape_write_status),i,3)
-                    self.grid.addWidget(create_center_data(self.segy_write_obj_dict_set_wise[segy_qc_id].tape_written_by),i,4)
-                    self.grid.addWidget(create_center_data(self.segy_write_obj_dict_set_wise[segy_qc_id].tape_written_on),i,5)
+                    self.grid.addWidget(create_central_labels(self.segy_write_obj_dict_set_wise[segy_qc_id].tape_label),i,0)
+                    self.grid.addWidget(decide_and_create_label(self.segy_write_obj_dict_set_wise[segy_qc_id].tape_write_status),i,4)
+                    self.grid.addWidget(create_center_data(self.segy_write_obj_dict_set_wise[segy_qc_id].tape_written_by),i,5)
+                    self.grid.addWidget(create_center_data(self.segy_write_obj_dict_set_wise[segy_qc_id].tape_written_on),i,6)
                     pb_view_log = QtGui.QPushButton('View log')
                     pb_view_log.setObjectName(str(segy_qc_id))
                     pb_view_log.clicked.connect(self.show_log)
-                    self.grid.addWidget(pb_view_log,i,6)
+                    self.grid.addWidget(pb_view_log,i,7)
                     if self.segy_write_obj_dict_set_wise[segy_qc_id].tape_qc_run_status: # If the tape qc was run
-                        self.grid.addWidget(decide_and_create_label(self.segy_write_obj_dict_set_wise[segy_qc_id].tape_qc_status),i,7)
-                        self.grid.addWidget(create_center_data(self.segy_write_obj_dict_set_wise[segy_qc_id].tape_checked_by),i,8)
-                        self.grid.addWidget(create_center_data(self.segy_write_obj_dict_set_wise[segy_qc_id].tape_checked_on),i,9)
+                        self.grid.addWidget(decide_and_create_label(self.segy_write_obj_dict_set_wise[segy_qc_id].tape_qc_status),i,8)
+                        self.grid.addWidget(create_center_data(self.segy_write_obj_dict_set_wise[segy_qc_id].tape_checked_by),i,9)
+                        self.grid.addWidget(create_center_data(self.segy_write_obj_dict_set_wise[segy_qc_id].tape_checked_on),i,10)
                 else:
                     if self.segy_ondisk_data_dict[line_name_list[i-1][1]].segy_on_disk_qc_status:
                         self.grid.addWidget(decide_and_create_label(""),
@@ -568,28 +569,40 @@ class SEGY_write_set_details(QtGui.QScrollArea):
     def show_log(self):
         sender = self.sender()
         obj_name = str(sender.objectName())
-        print obj_name
+        # print obj_name
+        self.id_segy_qc = obj_name
         segy_w_log_path = self.segy_write_obj_dict_set_wise[int(obj_name)].segy_w_path
+        self.segy_w_log_path = segy_w_log_path
         self.db_connection_obj.sess.flush()
         self.tape_write_obj_to_change = self.db_connection_obj.sess.query(self.db_connection_obj.SEGY_write).filter(
             self.db_connection_obj.SEGY_write.segy_w_path == segy_w_log_path).filter(
             self.db_connection_obj.SEGY_write.id_segy_qc == obj_name).first()
-        print "Now Fetching: " + segy_w_log_path
+        logger.info("Now Fetching: " + segy_w_log_path)
         encoded_string = return_encoded_log(DUG_connection_obj=self.DUG_connection_obj, log_path=segy_w_log_path)
         message = encoded_string.decode('base64')
         self.pop_up_approval = pop_up_approval_box_segy_write(message=message)
         self.pop_up_approval.closed.connect(self.approve_log)
+        self.pop_up_approval.approve_all.connect(self.approve_all_files_on_tape)
+        self.pop_up_approval.setMinimumWidth(600)
         self.pop_up_approval.show()
 
 
     def approve_log(self,user_name,approval_status):
-        if self.tape_write_obj_to_change.tape_qc_run_status is None:
-            self.tape_write_obj_to_change.tape_qc_run_status = True
-            self.tape_write_obj_to_change.tape_qc_status = approval_status
-            self.tape_write_obj_to_change.tape_checked_by = str(user_name)
-            self.tape_write_obj_to_change.tape_checked_on = datetime.datetime.now().strftime("%I:%M%p on %B %d, %Y")
+        tape_write_obj_to_change = self.db_connection_obj.sess.query(self.db_connection_obj.SEGY_write).filter(
+            self.db_connection_obj.SEGY_write.segy_w_path == self.segy_w_log_path
+        ).filter(
+            self.db_connection_obj.SEGY_write.id_segy_qc == self.id_segy_qc
+        ).first()
+        if tape_write_obj_to_change.tape_qc_run_status is None:
+            tape_write_obj_to_change.tape_qc_run_status = True
+            tape_write_obj_to_change.tape_qc_status = approval_status
+            tape_write_obj_to_change.tape_checked_by = str(user_name)
+            tape_write_obj_to_change.tape_checked_on = datetime.datetime.now().strftime("%I:%M%p on %B %d, %Y")
         else:
-            message = str('The log was checked before by: ' + self.tape_write_obj_to_change.tape_checked_by +  " on: " + self.tape_write_obj_to_change.tape_checked_on + ' ,please enter the reason to change')
+            file_name_dao = self.db_connection_obj.sess.query(
+                self.db_connection_obj.SEGY_QC_on_disk).filter(
+                self.db_connection_obj.SEGY_QC_on_disk.id_seq_segy_qc == tape_write_obj_to_change.id_segy_qc).first()
+            message = str("Tape Label : " + tape_write_obj_to_change.tape_label + " set_no : " + str(tape_write_obj_to_change.set_number) + ' linename : ' + file_name_dao.line_name + 'The log was checked before by: ' + tape_write_obj_to_change.tape_checked_by + " on: " + tape_write_obj_to_change.tape_checked_on + ' ,please enter the reason to change')
             status = change_log_creation(gui=self,conn_obj=self.db_connection_obj,message=message,type_entry='change',location = 'segy_write')
             if status:
                 self.tape_write_obj_to_change.tape_qc_status = approval_status
@@ -600,6 +613,41 @@ class SEGY_write_set_details(QtGui.QScrollArea):
         # if approval_status:
         #     if (self.deliverable.type, self.deliverable.media) in SEGY_write_to_media_table_list: # only if the media entry needs to be created from here
         #         self.check_and_create_media_list_entry()
+
+
+    def approve_all_files_on_tape(self,user_name, approval_status):
+        """
+        get all the segy files written to tape and loop through them to approve them one at a time, prompt for message if the file was approved before
+
+        :param user_name: user name approving the file
+        :param approval_status: True or false if this function is called
+        :return: none
+
+        """
+
+        dao_list_tape = self.db_connection_obj.sess.query(
+            self.db_connection_obj.SEGY_write).filter(
+            self.db_connection_obj.SEGY_write.segy_w_path == self.segy_w_log_path).all()
+
+        for tape_write_obj_to_change in dao_list_tape:
+            file_name_dao = self.db_connection_obj.sess.query(
+                self.db_connection_obj.SEGY_QC_on_disk).filter(
+                self.db_connection_obj.SEGY_QC_on_disk.id_seq_segy_qc == tape_write_obj_to_change.id_segy_qc).first()
+            if tape_write_obj_to_change.tape_qc_run_status is None:
+                logger.info("Now Approving SEGY write => Tape Label : " +  tape_write_obj_to_change.tape_label + " set_no : " + str(tape_write_obj_to_change.set_number) + ' linename : ' + file_name_dao.line_name )
+                tape_write_obj_to_change.tape_qc_run_status = True
+                tape_write_obj_to_change.tape_qc_status = approval_status
+                tape_write_obj_to_change.tape_checked_by = str(user_name)
+                tape_write_obj_to_change.tape_checked_on = datetime.datetime.now().strftime("%I:%M%p on %B %d, %Y")
+            else:
+                logger.warning("Db entry exists for  => Tape Label : " + tape_write_obj_to_change.tape_label + " set_no : " + str(tape_write_obj_to_change.set_number) + ' linename : ' + file_name_dao.line_name)
+                message = str("Tape Label : " + tape_write_obj_to_change.tape_label + " set_no : " + str(tape_write_obj_to_change.set_number) + ' linename : ' + file_name_dao.line_name  + 'The log was checked before by: ' + tape_write_obj_to_change.tape_checked_by +  " on: " + tape_write_obj_to_change.tape_checked_on + ' ,please enter the reason to change')
+                status = change_log_creation(gui=self,conn_obj=self.db_connection_obj,message=message,type_entry='change',location = 'segy_write')
+                if status:
+                    tape_write_obj_to_change.tape_qc_status = approval_status
+                    tape_write_obj_to_change.tape_checked_by = str(user_name)
+                    tape_write_obj_to_change.tape_checked_on = datetime.datetime.now().strftime("%I:%M%p on %B %d, %Y")
+            self.db_connection_obj.sess.commit()
 
 
     def check_and_create_media_list_entry(self):

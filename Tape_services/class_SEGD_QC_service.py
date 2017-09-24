@@ -4,10 +4,11 @@ from database_engine.DB_ops import get_list_of_applicable_SEGD_tapes,get_min_max
 import posixpath
 from dug_ops.DUG_ops import append_register_entry
 from database_engine.DB_ops import get_all_raw_seq_info_objects
-
+from configuration import get_segd_qc_script
 
 import logging
 from app_log import  stream_formatter
+
 logger = logging.getLogger(__name__)
 console = logging.StreamHandler()
 console.setLevel(logging.INFO)
@@ -21,10 +22,11 @@ class SEGD_QC_service(object):
     def __init__(self,parent):
         self.parent = parent
         self.name = "SEGD_QC_service"
-        logger.info("SEGD QC Script: " + segd_qc_script)
+        self.segd_qc_script = get_segd_qc_script()
+        logger.info("SEGD QC Script: " + self.segd_qc_script)
 
     def run(self):
-        run_cmd = str("nohup " + segd_qc_script + " tape=/dev/" + str(self.parent.tape_drive)+ " disk=" + str(self.SEGD_path) + " log=" + str(self.logfile) + " firstdisk=" + str(self.min_ffid) + " lastdisk=" + str(self.max_ffid) + ' > /dev/null 2>&1 &')
+        run_cmd = str("nohup " + self.segd_qc_script + " tape=/dev/" + str(self.parent.tape_drive)+ " disk=" + str(self.SEGD_path) + " log=" + str(self.logfile) + " firstdisk=" + str(self.min_ffid) + " lastdisk=" + str(self.max_ffid) + ' > /dev/null 2>&1 &')
         if use_mode == 'Demo':
             logger.warning("Running in DEMO mode command will only be printed not executed ....")
         elif use_mode == 'Production':

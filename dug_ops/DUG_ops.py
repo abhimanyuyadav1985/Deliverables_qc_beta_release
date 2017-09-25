@@ -244,6 +244,14 @@ def return_encoded_log(DUG_connection_obj,log_path):
     stdin, stdout, stderr = DUG_connection_obj.ws_client.exec_command(cmd)
     return stdout.read()
 
+
+@logger_util
+def return_encoded_stripped_sgyt(DUG_connection_obj,sgyt_path):
+    cmd = str('python /d/home/share/bin/strip_sgyt_and_send_encoded.py ' + sgyt_path)
+    stdin, stdout, stderr = DUG_connection_obj.ws_client.exec_command(cmd)
+    return stdout.read()
+
+
 @logger_util
 def get_file_timestamp(DUG_connection_obj,file_path):
     cmd = str('stat ' + file_path)

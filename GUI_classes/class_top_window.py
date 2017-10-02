@@ -358,7 +358,7 @@ class Top_Window(QtGui.QMainWindow):
     def create_large_files_project_dir(self):
         logger.info("Now checking if the SEGY file dir for project exists in ../large_files")
         large_files_root_path = large_file_root_dict[self.use_location]
-        project_name = get_project_name(self.db_connection_obj)
+        project_name = self.db_connection_obj.db_name.split("_")[1]
         self.large_file_dir_proj_path = posixpath.join(large_files_root_path,project_name)
         status = check_generic_path(self.DUG_connection_obj,self.large_file_dir_proj_path)
         if status == 'True':

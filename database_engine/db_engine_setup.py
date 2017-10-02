@@ -139,6 +139,7 @@ class db_connection_obj(object):
         try:
             self.metadata_orca = MetaData(schema=orca_schema_name)
             self.metadata_deliverables_qc = MetaData(schema = deliverables_qc_schema_name)
+            self.metadta_public = MetaData(schema = 'public')
         except Exception as error:
             logger.critical(error)
 
@@ -148,8 +149,13 @@ class db_connection_obj(object):
         try:
             self.Base_orca = automap_base(metadata = self.metadata_orca)
             self.Base_orca.prepare(self.db_engine, reflect=True)
+
             self.Base_deliverables_qc = automap_base(metadata = self.metadata_deliverables_qc)
             self.Base_deliverables_qc.prepare(self.db_engine, reflect=True)
+
+            self.Base_public = automap_base(metadata = self.metadta_public)
+            self.Base_public.prepare(self.db_engine, reflect = True)
+
         except Exception as error:
             logger.critical(error)
 
@@ -192,7 +198,7 @@ class db_connection_obj(object):
     @logger_util
     def initialize_dao_raw_seq_info(self):
         try:
-            self.Raw_seq_info = self.Base_deliverables_qc.classes.raw_seq_info
+            self.Raw_seq_info = self.Base_public.classes.raw_seq_info
         except Exception as error:
             logging.error(error)
 

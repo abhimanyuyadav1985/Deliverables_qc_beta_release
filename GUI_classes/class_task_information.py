@@ -1,9 +1,15 @@
-from PyQt4 import QtGui,QtCore
-import posixpath
+from PyQt4 import QtGui
 import os
-from dug_ops.DUG_ops import check_generic_path
 import pickle
 from general_functions.general_functions import create_central_labels
+import logging
+from app_log import  stream_formatter
+logger = logging.getLogger(__name__)
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+formatter = logging.Formatter(stream_formatter)
+console.setFormatter(formatter)
+logger.addHandler(console)
 
 
 class running_task_log(QtGui.QWidget):
@@ -13,42 +19,26 @@ class running_task_log(QtGui.QWidget):
         self.DUG_connection_obj = self.parent.DUG_connection_obj
         self.grid = QtGui.QGridLayout()
         self.setLayout(self.grid)
-
+        self.active_task_file_path = os.path.join(os.getcwd(),'temp','active_tasks')
         self.setWindowTitle("Active Task information")
 
-        self.import_task_log()
-        self.extract_task_info()
-
-        if len(self.task_list) == 0:
-            print "No active tasks available"
+        if os.path.exists(self.active_task_file_path):
+            self.extract_task_info()
+            if bool(self.task_dict):
+                self.add_info_widgets()
+            else:
+                logger.warning("No active tasks available")
+                self.add_none()
+        else:
             self.add_none()
-        else:
-            self.add_info_widgets()
-
-
-    def import_task_log(self):
-        proj_path = self.DUG_connection_obj.DUG_proj_path
-        remote_path = posixpath.join(proj_path,'register','task_log')
-        local_path = os.path.join(os.getcwd(),'temp','task_log')
-        if os.path.exists(local_path):
-            os.remove(local_path)
-        status = check_generic_path(self.DUG_connection_obj,remote_path)
-        if status == 'True':
-            #Now FTP the file
-            print "Now copying over the task log from remote host ..",
-            self.DUG_connection_obj.sftp_client.get(remote_path,local_path)
-            print 'Done ..'
-            self.local_path = local_path
-        else:
-            print "Task log missing on remotre host.."
 
     def add_none(self):
         message = "No active tasks"
         self.grid.addWidget(create_central_labels(message),0,0)
 
     def extract_task_info(self):
-        file_handler = open(self.local_path,'rb')
-        self.task_list = pickle.load(file_handler)
+        file_handler = open(self.active_task_file_path,'rb')
+        self.task_dict = pickle.load(file_handler)
         file_handler.close()
 
     def add_info_widgets(self):
@@ -59,12 +49,12 @@ class running_task_log(QtGui.QWidget):
         pb_refresh.clicked.connect(self.refresh_logs)
         self.grid.addWidget(pb_refresh,1,4)
         self.tab_list = []
-        for a_task in self.task_list:
-            self.tab_list.append(single_task_information(self,str(a_task[2])))
-            self.tabs.addTab(single_task_information(self,str(a_task[2])),str(str(a_task[1])))
+        for a_drive in self.task_dict.keys():
+            self.tab_list.append(single_task_information(self,self.task_dict[a_drive][7]))
+            self.tabs.addTab(single_task_information(self,self.task_dict[a_drive][7]))
 
     def refresh_logs(self):
-        print "Tool will be available soon.."
+        logger.warning("Tool will be available soon..")
 
 class single_task_information(QtGui.QScrollArea):
     def __init__(self,parent,log_path):

@@ -92,7 +92,7 @@ class db_connection_obj(object):
         db_user = obj.db_user
         db_pword = obj.db_pword
         db_port = obj.db_port
-
+        self.db_name = db_name
         host_IP = obj.host_IP
         host_user = obj.host_user
         host_pword = obj.host_pword

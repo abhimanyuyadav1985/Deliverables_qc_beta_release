@@ -316,8 +316,12 @@ def get_all_SEGD_qc_entries(obj):
 @logger_util
 def get_project_name(obj):
     project_info = obj.sess.query(obj.Project_info).order_by(obj.Project_info.ip).first()
-    project_name = project_info.project
-    return project_name
+    if project_info is None:
+        return None
+    else:
+        project_name = project_info.project
+        return project_name
+
 @logger_util
 def get_list_of_SEGY_deliverables(obj):
     deliverables_list = obj.sess.query(obj.Deliverables).filter(obj.Deliverables.class_d == 'SEGY').order_by(obj.Deliverables.id).all()

@@ -192,8 +192,8 @@ class Synchronization_service(object):
                     available_files_list = fetch_directory_content_list(self.DUG_connection_obj,cmd)
                     tape_log_run_dict = {}
                     for file_name in available_files_list:
-                        tape_label = file_name.split("-")[1]
-                        dict_item =  [posixpath.join(path,file_name),file_name.split("-")[0]]
+                        tape_label = file_name.split("--")[1]
+                        dict_item =  [posixpath.join(path,file_name),file_name.split("--")[0]]
                         dict_entry = {tape_label:dict_item}
                         tape_log_run_dict.update(dict_entry)
                     # check previous state

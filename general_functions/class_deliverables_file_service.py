@@ -18,7 +18,7 @@ class deliverable_file_service(object):
 
     def set_segd_log_file_path(self):
         dir_path = self.get_segd_wc_logfile_path()
-        file_name = self.parent.seq_name + "-" + self.parent.tape_name + "-set" + self.parent.set_no +'.log'
+        file_name = self.parent.seq_name + "--" + self.parent.tape_name + "--set" + self.parent.set_no +'.log'
         log_file_path = posixpath.join(dir_path,file_name)
         return log_file_path
 

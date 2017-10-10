@@ -59,13 +59,13 @@ def create_sgyt(deliverable,sequence,IL_range,XL_range,reel):
 
         a[0] = 'ebcdic_header ' + ebcdic.encode('base64')
         a[0] = a[0].replace('\n', '')
-        line_done = False
+        lino_done = False
         for s in a:
             if 'lino' in s:
-                if line_done:
+                if lino_done:
                     pass
                 else:
-                    s = '    lino {0:s} '.format(sequence.preplot_name)
+                    s = '    lino {0:s} '.format(sequence.preplot_name[-4:])
                     lino_done = True
             if 'reno' in s:
                 s = '    reno ' + str(int(reel))

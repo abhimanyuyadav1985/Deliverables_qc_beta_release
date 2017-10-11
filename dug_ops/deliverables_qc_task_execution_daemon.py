@@ -132,7 +132,7 @@ class Task_execution_service(object):
                         self.cursor.execute('UPDATE tasks SET status = ? WHERE id= ?', (new_status, id))
                     self.logging.info(
                         'Status for task id: ' + str(id) + ' Changed from : ' + status + ' to: ' + new_status)
-                    if type == 'segy_qc' and new_status == 'finished':  # management of segy_qc_lock
+                    if type == 'segy_qc' and new_status in ['finished','error']:  # management of segy_qc_lock
                         if os.path.exists(os.path.join(os.getcwd(), 'segy_qc_lock')):
                             try:
                                 os.remove(os.path.join(os.getcwd(), 'segy_qc_lock'))

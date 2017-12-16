@@ -140,10 +140,9 @@ class Task_execution_service(object):
             submitted_job_status_dict = {'submit': 'unsure',
                                          'unsure': 'doubt',
                                          'doubt': 'error',
-                                         'active': 'finished',
-                                         'error' : 'error'}
+                                         'active': 'finished'}
             logger.info("Now syncing submitted job status")
-            self.cursor.execute("SELECT * FROM tasks WHERE status in ('submit','unsure','doubt','active','error')")
+            self.cursor.execute("SELECT * FROM tasks WHERE status in ('submit','unsure','doubt','active')")
             self.submit_tasks = self.cursor.fetchall()
             if self.submit_tasks == None:
                 logger.info("No jobs to check")
@@ -153,21 +152,17 @@ class Task_execution_service(object):
                     (id, command, type, drive, sysip, submittime, status, logpath, exe_time, finish_time,
                      exception) = a_task
                     logger.debug("-" * 80)
-                    logger.debug("Test command => " + command) # This is a test string 
-                    logger.debug("-" * 80)
+                    logger.debug("Test command => " + command) # This is a test string
                     cmd = str("ps -ef")
                     logger.debug("-"*80)
                     cmd_out = os.popen(cmd).readlines()
+                    for a_line in cmd_out:
+                        logger.debug(a_line)
+                    logger.debug("-" * 80)
                     new_status = submitted_job_status_dict[status]
                     for a_line in cmd_out:
                         if command in a_line:
                             new_status = 'active'
-                    if new_status is 'active' and exe_time in None:
-                        exe_time = time.strftime("%Y%m%d-%H%M%S")
-                        self.cursor.execute('UPDATE tasks SET status = ? , exe_time = ? WHERE id= ?',
-                                            (new_status, exe_time, id))
-                        self.conn.commit()
-                        logger.info("New task started: Task cmd => " + command)
                     if new_status == 'finished':  # finish_time needs to be added to the job when it finishes
                         finish_time = time.strftime("%Y%m%d-%H%M%S")
                         self.cursor.execute('UPDATE tasks SET status = ? , finish_time = ? WHERE id= ?',
@@ -230,6 +225,10 @@ class Task_execution_service(object):
                         logger.info('Task id: ' + str(id) + " Changed from queue to submit")
                     except exception as e:
                         logger.error(e)
+                exe_time = time.strftime("%Y%m%d-%H%M%S")
+                self.cursor.execute('UPDATE tasks SET exe_time = ? WHERE id= ?',
+                                    (exe_time, id))
+                self.conn.commit()
 
     def create_active_task_list_for_app(self):
         """

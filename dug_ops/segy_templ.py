@@ -37,7 +37,7 @@ def create_sgyt(deliverable,sequence,IL_range,XL_range,reel):
         lb = len(a[0][14:])
         l = len(ebcdic)
         #modify the items in quotations to change substitutions
-        ebcdic = ebcdic.replace('ABCDEFGHIJKLMNO', sequence.real_line_name)
+        ebcdic = ebcdic.replace('ABCDEFGHIJKLMNOP', sequence.real_line_name)
         ebcdic = ebcdic.replace('FGSP-LGSP', '{0:04d}-{1:04d}'.format(int(sequence.fgsp), int(sequence.lgsp)))
         ebcdic = ebcdic.replace('SSS', '{0:03d}'.format(int(sequence.seq)))
         ebcdic = ebcdic.replace('DD-MM-YYYY', str(sequence.start_data))

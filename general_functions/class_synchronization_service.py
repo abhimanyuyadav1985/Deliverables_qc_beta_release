@@ -69,7 +69,6 @@ class Synchronization_service(object):
 
         """
         logger.info("Now doing statup diagnostic ... ")
-        # self.sync_raw_seq_info()
         self.check_all_deliverable_dir_and_db_entries()
         self.sync_media_list()
         self.SEGD_QC_sync()

@@ -148,10 +148,6 @@ class db_connection_obj(object):
     def initialize_base(self):
         try:
 
-            self.metadata_deliverables_qc.reflect(self.db_engine)
-            self.metadata_orca.reflect(self.db_engine, only=['project_info', 'tape','line'])
-            self.metadta_public.reflect(self.db_engine,only = ['raw_seq_info'])
-
             self.Base_orca = automap_base(metadata = self.metadata_orca)
             self.Base_deliverables_qc = automap_base(metadata=self.metadata_deliverables_qc)
             self.Base_public = automap_base(metadata = self.metadta_public)

@@ -469,7 +469,7 @@ class Top_Window(QtGui.QMainWindow):
             pass
         else:
             if os.path.exists(os.path.join(os.getcwd(),'temp','active_tasks')):
-                file_handler = open(os.path.join(os.getcwd(),'temp','active_tasksF'),'rb')
+                file_handler = open(os.path.join(os.getcwd(),'temp','active_tasks'),'rb')
                 task_dict = pickle.load(file_handler)
                 file_handler.close()
                 for a_dev in task_dict.keys():
